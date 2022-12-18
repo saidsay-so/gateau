@@ -22,7 +22,7 @@ mod test {
         ];
 
         assert_eq!(
-            decrypt_value(&CHROME_V10_KEY, &ENCRYPTED_EXAMPLE[3..]).unwrap(),
+            decrypt_value(CHROME_V10_KEY, &ENCRYPTED_EXAMPLE[3..]).unwrap(),
             "PENDING+400"
         );
     }

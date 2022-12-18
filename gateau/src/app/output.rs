@@ -26,6 +26,7 @@ use std::{
 
 use cookie::{time::format_description, Cookie};
 
+use itertools::Itertools;
 use serde::Serialize;
 
 /// Output cookies in Netscape (cookies.txt) format, recognized by curl and wget.
@@ -36,7 +37,7 @@ use serde::Serialize;
 pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Result<()> {
     const NETSCAPE_HEADER: &[u8] = b"# Netscape HTTP Cookie File\n";
 
-    fn bool_to_uppercase(b: bool) -> &'static str {
+    const fn bool_to_uppercase(b: bool) -> &'static str {
         if b {
             "TRUE"
         } else {
@@ -46,56 +47,93 @@ pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::
 
     writer.write(NETSCAPE_HEADER)?;
 
-    writer.write_all(
-        cookies
-            .iter()
-            .map(|cookie| {
-                format!(
-                    "{domain}\t{flag}\t{path}\t{secure}\t{expiration}\t{name}\t{value}",
-                    domain = cookie.domain().unwrap(),
-                    flag = bool_to_uppercase(cookie.domain().map(|d| d.starts_with('.')).unwrap()),
-                    path = cookie.path().unwrap(),
-                    secure = bool_to_uppercase(cookie.secure().unwrap()),
-                    expiration = cookie
-                        .expires()
-                        .and_then(|t| t.datetime())
-                        .unwrap()
-                        .unix_timestamp(),
-                    name = cookie.name(),
-                    value = cookie.value()
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n")
-            .as_bytes(),
-    )
+    for cookie in cookies {
+        writeln!(
+            writer,
+            "{domain}\t{flag}\t{path}\t{secure}\t{expiration}\t{name}\t{value}",
+            domain = cookie.domain().unwrap(),
+            flag = bool_to_uppercase(cookie.domain().map(|d| d.starts_with('.')).unwrap()),
+            path = cookie.path().unwrap(),
+            secure = bool_to_uppercase(cookie.secure().unwrap()),
+            expiration = cookie
+                .expires()
+                .and_then(|t| t.datetime())
+                .unwrap()
+                .unix_timestamp(),
+            name = cookie.name(),
+            value = cookie.value()
+        )?;
+    }
+
+    Ok(())
 }
 
 pub fn human<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Result<()> {
+    use color_eyre::owo_colors::OwoColorize;
+
     let format =
         format_description::parse("[weekday], [day] [month] [year] [hour]:[minute]:[second] GMT")
             .unwrap();
 
-    writer.write_all(cookies.iter()
-        .map(|cookie| {
-            format!(
-                "{name}={value}; Domain={domain}; Path={path}; Secure={secure}; HttpOnly={http_only}; SameSite={same_site}; Expires={expires}",
-                name = cookie.name(),
-                value = cookie.value(),
-                domain = cookie.domain().unwrap(),
-                path = cookie.path().unwrap(),
-                secure = cookie.secure().unwrap(),
-                http_only = cookie.http_only().unwrap(),
-                same_site = cookie.same_site().unwrap(),
-                expires = cookie
-                    .expires()
-                    .and_then(|t| t.datetime())
-                    .unwrap()
-                    .format(&format).unwrap()
-            )
-        })
-        .collect::<Vec<String>>()
-        .join("\n").as_bytes())
+    macro_rules! human_field {
+        ($name:ident, $value:expr) => {
+            format!("{}: {}", stringify!($name).bold(), $value)
+        };
+    }
+
+    for (domain, cookies) in cookies
+        .iter()
+        .into_group_map_by(|cookie| cookie.domain().unwrap())
+        .into_iter()
+    {
+        writeln!(writer, "{}", domain.bold().blue())?;
+
+        writeln!(writer)?;
+
+        for cookie in cookies {
+            writeln!(writer, "{}", "--------------------".bold().bright_black())?;
+
+            writeln!(writer)?;
+
+            writeln!(writer, "{}", human_field!(Name, cookie.name()))?;
+            writeln!(writer, "{}", human_field!(Value, cookie.value()))?;
+            writeln!(
+                writer,
+                "{}",
+                human_field!(Path, cookie.path().unwrap().italic())
+            )?;
+            writeln!(writer, "{}", human_field!(Secure, cookie.secure().unwrap()))?;
+            writeln!(
+                writer,
+                "{}",
+                human_field!(HttpOnly, cookie.http_only().unwrap())
+            )?;
+            writeln!(
+                writer,
+                "{}",
+                human_field!(SameSite, cookie.same_site().unwrap())
+            )?;
+            writeln!(
+                writer,
+                "{}",
+                human_field!(
+                    Expires,
+                    cookie
+                        .expires()
+                        .and_then(|t| t.datetime())
+                        .unwrap()
+                        .format(&format)
+                        .unwrap()
+                )
+            )?;
+
+            writeln!(writer)?;
+        }
+
+        writeln!(writer)?;
+    }
+
+    Ok(())
 }
 
 /// Raw cookie data as it is stored in the session file.
