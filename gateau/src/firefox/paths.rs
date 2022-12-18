@@ -1,6 +1,6 @@
 use std::{
     ffi::{OsStr, OsString},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub(crate) struct PathProvider {
@@ -16,12 +16,8 @@ impl PathProvider {
     /// # Panics
     ///
     /// This function panics if no default profile can be found.
-    pub(crate) fn new<P: AsRef<OsStr>>(root_dir: PathBuf, profile: Option<P>) -> Self {
-        let base_dir = root_dir.join(if cfg!(any(windows, target_os = "macos")) {
-            "Mozilla/Firefox"
-        } else {
-            ".mozilla/firefox"
-        });
+    pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
+        let base_dir = root_dir.as_ref().to_owned();
 
         let profile = profile.map(|p| p.as_ref().into()).unwrap_or_else(|| {
             let profiles = tini::Ini::from_file(&base_dir.join("profiles.ini"))
@@ -49,11 +45,14 @@ impl PathProvider {
             dirs_next::config_dir().unwrap()
         } else {
             dirs_next::home_dir().unwrap()
-        };
+        }
+        .join(if cfg!(any(windows, target_os = "macos")) {
+            "Mozilla/Firefox"
+        } else {
+            ".mozilla/firefox"
+        });
 
-        let dir = root_dir;
-
-        Self::new::<&OsStr>(dir, None)
+        Self::new::<_, &OsStr>(root_dir, None)
     }
 
     /// Get the default profile's name from the profiles.ini file.

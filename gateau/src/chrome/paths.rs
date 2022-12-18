@@ -2,7 +2,7 @@ use super::ChromeVariant;
 
 use std::{
     ffi::{OsStr, OsString},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub(crate) struct PathProvider {
@@ -14,12 +14,8 @@ pub(crate) struct PathProvider {
 impl PathProvider {
     /// Create a new path provider for the given profile and variant.
     /// If no profile is given, the default profile is used.
-    pub(crate) fn new<P: AsRef<OsStr>>(
-        root_dir: PathBuf,
-        variant: ChromeVariant,
-        profile: Option<P>,
-    ) -> Self {
-        let base_dir = root_dir.join(PathProvider::variant_base_folder(variant));
+    pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
+        let base_dir = root_dir.as_ref().to_owned();
 
         let profile = profile
             .map(|p| p.as_ref().into())
@@ -43,9 +39,10 @@ impl PathProvider {
         } else {
             dirs_next::config_dir()
         }
-        .unwrap();
+        .unwrap()
+        .join(PathProvider::variant_base_folder(variant));
 
-        Self::new::<&OsStr>(root_dir, variant, None)
+        Self::new::<_, &OsStr>(root_dir, None)
     }
 
     /// Returns the subpath of the base directory which changes depending on the variant.

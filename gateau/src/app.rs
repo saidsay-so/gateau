@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, io::Write, process::Command, str::FromStr};
+use std::{collections::HashSet, ffi::OsStr, io::Write, process::Command, str::FromStr};
 
 use color_eyre::{
     eyre::{ensure, eyre, Context},
@@ -13,9 +13,12 @@ use crate::{
     firefox,
 };
 
-mod output;
+use self::session::SessionBuilder;
 
-#[derive(Debug, Clone, Copy)]
+mod output;
+mod session;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Browser {
     Firefox,
     Chromium,
@@ -118,12 +121,18 @@ impl App {
     }
 
     pub fn run(&mut self) -> Result<Option<i32>> {
-        let browser = self.args.browser.unwrap_or(Browser::Firefox);
-
-        let mut cookies = self.get_cookies(browser)?;
+        let browsers: HashSet<Browser> = HashSet::from_iter(self.args.browsers.clone());
 
         match &self.args.mode {
             crate::Mode::Output { format, hosts } => {
+                let mut cookies = browsers
+                    .into_iter()
+                    .map(|browser| self.get_cookies(browser))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>();
+
                 // Filter cookies by domain
                 if !hosts.is_empty() {
                     cookies.retain(|cookie| {
@@ -145,12 +154,13 @@ impl App {
                     });
                 }
 
+                let mut stream = std::io::stdout().lock();
+
                 let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
                     crate::OutputFormat::Netscape => output::netscape,
                     crate::OutputFormat::Human => output::human,
                     crate::OutputFormat::HttpieSession => output::httpie_session,
                 };
-                let mut stream = std::io::stdout().lock();
 
                 formatter(&cookies, &mut stream)
                     .map(|_| None)
@@ -161,7 +171,7 @@ impl App {
                 command,
                 forwarded_args,
             } => {
-                let (cmd, option, cookies_formatter): (
+                let (cmd, option, formatter): (
                     _,
                     _,
                     fn(&[Cookie], _) -> std::io::Result<()>,
@@ -179,12 +189,41 @@ impl App {
                     }
                 };
 
+                let cookies = browsers
+                    .into_iter()
+                    .map(|browser| self.get_cookies(browser))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>();
+
                 let capacity = (128 * cookies.len()).next_power_of_two();
                 let mut cookies_buf = Vec::with_capacity(capacity);
 
-                cookies_formatter(&cookies, &mut cookies_buf)?;
+                formatter(&cookies, &mut cookies_buf)?;
 
                 App::wrap_command(cmd, option, forwarded_args, cookies_buf).map(Some)
+            }
+
+            crate::Mode::Session {
+                browser,
+                url,
+                format,
+            } => {
+                let session = SessionBuilder::new(*browser, url.clone()).build()?;
+                let cookies = session.cookies();
+
+                let mut stream = std::io::stdout().lock();
+
+                let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
+                    crate::OutputFormat::Netscape => output::netscape,
+                    crate::OutputFormat::Human => output::human,
+                    crate::OutputFormat::HttpieSession => output::httpie_session,
+                };
+
+                formatter(&cookies, &mut stream)
+                    .map(|_| None)
+                    .wrap_err("Could not output cookies to the provided stream")
             }
         }
     }

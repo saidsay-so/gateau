@@ -87,6 +87,24 @@ enum Mode {
         #[bpaf(any("ARG"), many)]
         forwarded_args: Vec<OsString>,
     },
+
+    /// Open the browser in a new context and import cookies when it closes
+    #[bpaf(command)]
+    Session {
+        /// Browser to open
+        #[bpaf(positional("BROWSER"))]
+        browser: Browser,
+
+        /// Format to output cookies in
+        ///
+        /// Supported formats: netscape, httpie-session
+        #[bpaf(short, long)]
+        format: Option<OutputFormat>,
+
+        /// URL to open
+        #[bpaf(positional("URL"))]
+        url: Option<Uri>,
+    },
 }
 
 #[derive(Debug, Clone, Bpaf)]
@@ -97,9 +115,9 @@ struct Args {
     #[bpaf(short, long)]
     cookie_db: Option<PathBuf>,
 
-    /// Browser to import cookies from
-    #[bpaf(short, long)]
-    browser: Option<Browser>,
+    /// Browser(s) to import cookies from
+    #[bpaf(long)]
+    browsers: Vec<Browser>,
 
     /// Bypass the lock on the database (can cause read errors)
     #[bpaf(long)]
