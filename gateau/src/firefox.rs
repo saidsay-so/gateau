@@ -35,8 +35,12 @@ pub(crate) mod paths;
 
 /// Get all cookies from the database.
 pub fn get_cookies(conn: &Connection) -> Result<Vec<Cookie<'static>>> {
-    let query = "SELECT name, value, host, path, expiry, isSecure, sameSite, isHttpOnly
-        FROM moz_cookies";
+    let query = "SELECT name, value, host, path, 
+                        expiry, isSecure, sameSite, 
+                        isHttpOnly
+        FROM moz_cookies
+        WHERE host_filter(host)";
+
     let mut stmt = conn.prepare(query)?;
 
     let cookies = stmt
@@ -60,7 +64,8 @@ pub fn get_cookies(conn: &Connection) -> Result<Vec<Cookie<'static>>> {
                     .into_owned(),
             )
         })?
-        .collect::<Result<Vec<_>, _>>()?;
+        .filter_map(|c| c.ok())
+        .collect::<Vec<_>>();
 
     Ok(cookies)
 }

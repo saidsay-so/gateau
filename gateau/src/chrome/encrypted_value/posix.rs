@@ -8,7 +8,7 @@ pub const CHROME_V10_KEY: [u8; 16] = [
     253, 98, 31, 229, 162, 180, 2, 83, 157, 250, 20, 124, 169, 39, 39, 120,
 ];
 
-#[cfg(all(unix, not(target_os = "macos"), test))]
+#[cfg(test)]
 mod test {
     use crate::chrome::encrypted_value::decrypt_value;
 

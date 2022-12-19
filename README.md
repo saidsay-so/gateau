@@ -52,21 +52,15 @@ alias curlfire="curl -b <(gateau output --format netscape)"
 alias chrul="curl -b <(gateau output --format netscape --browser chromium)"
 alias wgetfire="wget --load-cookies <(gateau output --format netscape)"
 alias wgetchr="wget --load-cookies <(gateau output --format netscape --browser chromium)"
-alias httpfire="http --session <(gateau output --format httpie-session)"
-alias httpchr="http --session <(gateau output --format httpie-session --browser chromium)"
+alias httpfire="http --session-read-only <(gateau output --format httpie-session)"
+alias httpchr="http --session-read-only <(gateau output --format httpie-session --browser chromium)"
 ```
 
-<sub>
-
-Thanks Copilot for the aliases...
-
-</sub>
-
-Please note that this would probably not work as you intended
+Please note that this would probably not work as intended
 if you use `curl` with [`-:`](https://curl.se/docs/manpage.html) and multiple URLs,
 as the cookies would be imported for the first request only.
 
-### Output cookies
+### Output (piping) cookies
 
 #### cookies.txt format (curl, wget)
 
@@ -96,8 +90,32 @@ The current implementation should be compatible with httpie 3.2.0+,
 but it could change if httpie stop supporting this format in the future.
 
 ```bash
-http --session <(gateau output --format httpie-session) example.com
+http --session-read-only <(gateau output --format httpie-session) example.com
 ```
+
+In this example, gateau will output cookies from Firefox in httpie session format,
+and httpie will import it as an anonymous session.
+
+You can also save named sessions,
+by writing them to file which can be then used with `--session`:
+
+#### Example
+
+```bash
+# Just an example, should be changed
+HOST=adventofcode.com
+SESSION_NAME=aoc
+# Usual path for httpie sessions on Unix systems, see https://httpie.io/docs#sessions
+# and https://httpie.io/docs/cli/config-file-directory
+CONFIG_PATH=${XDG_CONFIG_HOME:-$HOME/.config}
+gateau output --format=httpie-session $HOST > $CONFIG_PATH/httpie/sessions/$HOST/$SESSION_NAME.json
+https --session=$SESSION_NAME $HOST
+```
+
+### Windows users
+
+If you are using Windows, you can either use a shell that supports process substitution
+or use the `wrap` command.
 
 ### Wrapping commands
 
@@ -114,7 +132,7 @@ cat data | gateau wrap curl --bypass-lock -- -X POST -d @- httpbin.org/post
 ```
 
 This will wrap the command `curl -X POST -d @- httpbin.org/post` and import cookies for the request.
-The arguments and standard input are directly forwarded to the wrapped command, 
+The arguments and standard input are directly forwarded to the wrapped command,
 so you can use them as usual.
 They are separated from the gateau arguments by `--`, so gateau will not parse them.
 Note that it is optional if you do not use gateau arguments after the wrapped command, e.g:
@@ -166,6 +184,15 @@ if the database is being modified at the same time, especially with Chrome.
 Although, the database files are opened in read-only mode, so your cookies will not be
 altered if an error occurs.
 
+### Session
+
+It is possible to use gateau to create a browser session within a new context,
+and output the cookies after the session is finished.
+
+```bash
+gateau wrap --browser=firefox --session -- curl https://example.com
+```
+
 ## Help
 
 ```
@@ -190,8 +217,6 @@ Available commands:
 gateau is written in Rust, so it should be pretty fast, even if it is not
 really optimized yet. Here are some non-scientific benchmarks:
 
-- with a local server:
-
 ```
 Benchmark 1: gateau wrap curl localhost:8000
   Time (mean ± σ):      14.2 ms ±   2.9 ms    [User: 8.0 ms, System: 5.3 ms]
@@ -214,27 +239,6 @@ Summary
     1.19 ± 0.55 times faster than 'curl localhost:8000'
     1.45 ± 0.52 times faster than 'curl -b <(gateau output) localhost:8000'
     2.18 ± 0.85 times faster than 'gateau wrap curl localhost:8000'
-```
-
-- with a remote server:
-
-```
-Benchmark 1: gateau wrap curl -sSL example.com
-  Time (mean ± σ):     194.8 ms ±   6.7 ms    [User: 9.4 ms, System: 7.4 ms]
-  Range (min … max):   183.5 ms … 207.5 ms    14 runs
-
-Benchmark 2: curl -b <(gateau output) -sSL example.com
-  Time (mean ± σ):     193.2 ms ±  14.8 ms    [User: 6.7 ms, System: 3.6 ms]
-  Range (min … max):   182.2 ms … 229.1 ms    15 runs
-
-Benchmark 3: curl -sSL example.com
-  Time (mean ± σ):     186.2 ms ±  11.1 ms    [User: 3.4 ms, System: 4.9 ms]
-  Range (min … max):   177.3 ms … 222.7 ms    15 runs
-
-Summary
-  'curl -sSL example.com' ran
-    1.04 ± 0.10 times faster than 'curl -b <(gateau output) -sSL example.com'
-    1.05 ± 0.07 times faster than 'gateau wrap curl -sSL example.com'
 ```
 
 > The benchmarks were done with [hyperfine](https://github.com/sharkdp/hyperfine),

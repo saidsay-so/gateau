@@ -74,7 +74,7 @@ enum Mode {
         hosts: Vec<Uri>,
     },
 
-    /// Wrap a command (curl, wget, httpie) with the imported cookies
+    /// Wrap a command with the imported cookies
     #[bpaf(command)]
     Wrap {
         /// Command which should be wrapped
@@ -88,22 +88,30 @@ enum Mode {
         forwarded_args: Vec<OsString>,
     },
 
-    /// Open the browser in a new context and import cookies when it closes
+    /// Open the browser in a new context and output the saved cookies when it closes
     #[bpaf(command)]
     Session {
-        /// Browser to open
-        #[bpaf(positional("BROWSER"))]
-        browser: Browser,
-
         /// Format to output cookies in
         ///
         /// Supported formats: netscape, httpie-session
         #[bpaf(short, long)]
         format: Option<OutputFormat>,
 
+        /// Browser to open
+        ///
+        /// Supported browsers: chrome, chromium, firefox
+        #[bpaf(positional("BROWSER"))]
+        browser: Browser,
+
         /// URL to open
         #[bpaf(positional("URL"))]
         url: Option<Uri>,
+
+        /// Hosts to filter cookies by
+        ///
+        /// If no hosts are specified, all cookies will be output
+        #[bpaf(positional("HOST"), many)]
+        hosts: Vec<Uri>,
     },
 }
 

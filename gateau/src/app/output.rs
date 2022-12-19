@@ -45,7 +45,7 @@ pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::
         }
     }
 
-    writer.write(NETSCAPE_HEADER)?;
+    writer.write_all(NETSCAPE_HEADER)?;
 
     for cookie in cookies {
         writeln!(
@@ -85,6 +85,21 @@ pub fn human<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Res
         .iter()
         .into_group_map_by(|cookie| cookie.domain().unwrap())
         .into_iter()
+        .sorted_by(|c1, c2| {
+            let c1 = if c1.0.starts_with('.') {
+                c1.0.get(1..).unwrap()
+            } else {
+                c1.0
+            };
+
+            let c2 = if c2.0.starts_with('.') {
+                c2.0.get(1..).unwrap()
+            } else {
+                c2.0
+            };
+
+            c1.cmp(c2)
+        })
     {
         writeln!(writer, "{}", domain.bold().blue())?;
 

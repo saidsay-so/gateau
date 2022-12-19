@@ -145,7 +145,8 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
         encrypted_value::decrypt_value(key, encrypted_value)
     } else {
         // We assume that it's not encrypted
-        String::from_utf8(encrypted_value.into()).wrap_err("Failed to decode cookie value as UTF-8")
+        String::from_utf8(encrypted_value.into())
+            .wrap_err("Failed to decode cookie value as unencrypted")
     }
 }
 
@@ -174,7 +175,8 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
         encrypted_value::decrypt_value(key, encrypted_value)
     } else {
         // We assume that it's not encrypted
-        String::from_utf8(encrypted_value.into()).wrap_err("Failed to decode cookie value as UTF-8")
+        String::from_utf8(encrypted_value.into())
+            .wrap_err("Failed to decode cookie value as unencrypted")
     }
 }
 
@@ -217,7 +219,8 @@ pub(crate) fn get_cookies(
     let query = "SELECT name, value, encrypted_value, 
                         host_key, path, expires_utc, 
                         is_secure, samesite, is_httponly
-        FROM cookies";
+        FROM cookies
+        WHERE host_filter(host_key)";
     let mut stmt = conn.prepare(query)?;
 
     let cookies = stmt

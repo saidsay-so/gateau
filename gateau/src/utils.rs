@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rusqlite::{Connection, OpenFlags};
+use rusqlite::{functions::FunctionFlags, Connection, OpenFlags};
 
 /// Get a connection to the database, while bypassing the file locking if `bypass_lock` is `true`.
 pub fn get_connection<P: AsRef<Path>>(
@@ -19,4 +19,19 @@ pub fn get_connection<P: AsRef<Path>>(
     }?;
 
     Ok(connection)
+}
+
+pub(crate) fn sqlite_predicate_builder<F, S: AsRef<str>>(
+    conn: &Connection,
+    name: S,
+    predicate: F,
+) -> color_eyre::Result<()>
+where
+    F: Fn(&str) -> bool + std::marker::Sync + std::marker::Send + std::panic::UnwindSafe + 'static,
+{
+    Ok(
+        conn.create_scalar_function(name.as_ref(), 1, FunctionFlags::default(), move |ctx| {
+            Ok(predicate(&ctx.get::<String>(0)?))
+        })?,
+    )
 }

@@ -1,12 +1,20 @@
-use std::{collections::HashSet, ffi::OsStr, io::Write, process::Command, str::FromStr};
+use std::{
+    collections::HashSet,
+    ffi::OsStr,
+    io::{self, Write},
+    process::Command,
+    str::FromStr,
+    sync::Arc,
+};
 
 use color_eyre::{
     eyre::{ensure, eyre, Context},
     Result,
 };
 use cookie::Cookie;
+use http::Uri;
 
-use crate::{url::BaseDomain, Args};
+use crate::{url::BaseDomain, utils::sqlite_predicate_builder, Args};
 
 use crate::{
     chrome::{self, ChromeVariant},
@@ -23,6 +31,16 @@ pub enum Browser {
     Firefox,
     Chromium,
     Chrome,
+}
+
+impl std::fmt::Display for Browser {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Browser::Firefox => write!(f, "Firefox"),
+            Browser::Chromium => write!(f, "Chromium"),
+            Browser::Chrome => write!(f, "Google Chrome"),
+        }
+    }
 }
 
 impl FromStr for Browser {
@@ -49,7 +67,10 @@ impl App {
         Self { args }
     }
 
-    fn get_cookies(&self, browser: Browser) -> Result<Vec<Cookie<'static>>> {
+    fn get_cookies(&self, browser: Browser, hosts: &[Uri]) -> Result<Vec<Cookie<'static>>> {
+        let hosts: Vec<_> = hosts.to_vec();
+        let hosts = Arc::from(hosts);
+
         match browser {
             Browser::Firefox => {
                 let path_provider = firefox::paths::PathProvider::default_profile();
@@ -62,6 +83,12 @@ impl App {
                     .unwrap_or_else(|_| path_provider.cookies_database());
 
                 let conn = crate::utils::get_connection(db_path, self.args.bypass_lock)?;
+
+                let hosts = Arc::clone(&hosts);
+                sqlite_predicate_builder(&conn, "host_filter", move |host| {
+                    filter_hosts(host, &hosts)
+                })?;
+
                 firefox::get_cookies(&conn)
             }
 
@@ -82,13 +109,19 @@ impl App {
                     .unwrap_or_else(|_| path_provider.cookies_database());
 
                 let conn = crate::utils::get_connection(db_path, self.args.bypass_lock)?;
+
+                let hosts = Arc::clone(&hosts);
+                sqlite_predicate_builder(&conn, "host_filter", move |host| {
+                    filter_hosts(host, &hosts)
+                })?;
+
                 chrome::get_cookies(&conn, chrome_variant, path_provider)
             }
         }
     }
 
     /// Wraps the provided command while passing the cookies as a temporary file to the command.
-    fn wrap_command<'a, C, A, Args, O>(
+    fn wrap_command<C, A, Args, O>(
         cmd: C,
         cookies_opt: A,
         forwarded_args: &[Args],
@@ -121,38 +154,23 @@ impl App {
     }
 
     pub fn run(&mut self) -> Result<Option<i32>> {
-        let browsers: HashSet<Browser> = HashSet::from_iter(self.args.browsers.clone());
+        let browsers = if self.args.browsers.is_empty() {
+            &[Browser::Firefox]
+        } else {
+            self.args.browsers.as_slice()
+        };
+
+        let browsers: HashSet<Browser> = HashSet::from_iter(browsers.iter().cloned());
 
         match &self.args.mode {
             crate::Mode::Output { format, hosts } => {
-                let mut cookies = browsers
+                let cookies = browsers
                     .into_iter()
-                    .map(|browser| self.get_cookies(browser))
+                    .map(|browser| self.get_cookies(browser, hosts))
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
                     .flatten()
                     .collect::<Vec<_>>();
-
-                // Filter cookies by domain
-                if !hosts.is_empty() {
-                    cookies.retain(|cookie| {
-                        let domain = cookie.domain().unwrap();
-                        let cookie_valid_domain = match domain.chars().next() {
-                            Some('.') => domain.get(1..).unwrap(),
-                            _ => domain,
-                        };
-
-                        hosts.iter().any(|h| {
-                            domain == h
-                                || h.base_domain()
-                                    .as_deref()
-                                    .or_else(|| h.host())
-                                    // either the base domain or the host should be Some
-                                    .unwrap()
-                                    .ends_with(cookie_valid_domain)
-                        })
-                    });
-                }
 
                 let mut stream = std::io::stdout().lock();
 
@@ -164,6 +182,10 @@ impl App {
 
                 formatter(&cookies, &mut stream)
                     .map(|_| None)
+                    .or_else(|e| match e {
+                        e if e.kind() == io::ErrorKind::BrokenPipe => Ok(None),
+                        _ => Err(e),
+                    })
                     .wrap_err("Could not output cookies to the provided stream")
             }
 
@@ -171,11 +193,7 @@ impl App {
                 command,
                 forwarded_args,
             } => {
-                let (cmd, option, formatter): (
-                    _,
-                    _,
-                    fn(&[Cookie], _) -> std::io::Result<()>,
-                ) = match command {
+                let (cmd, option, formatter): (_, _, fn(_, _) -> _) = match command {
                     crate::WrappedCmd::Curl => ("curl", "-b", output::netscape),
                     crate::WrappedCmd::Wget => ("wget", "--load-cookies", output::netscape),
                     crate::WrappedCmd::HttpieHttp | crate::WrappedCmd::HttpieHttps => {
@@ -191,7 +209,7 @@ impl App {
 
                 let cookies = browsers
                     .into_iter()
-                    .map(|browser| self.get_cookies(browser))
+                    .map(|browser| self.get_cookies(browser, &[]))
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
                     .flatten()
@@ -209,8 +227,9 @@ impl App {
                 browser,
                 url,
                 format,
+                hosts,
             } => {
-                let session = SessionBuilder::new(*browser, url.clone()).build()?;
+                let session = SessionBuilder::new(*browser, url.clone(), hosts.clone()).build()?;
                 let cookies = session.cookies();
 
                 let mut stream = std::io::stdout().lock();
@@ -221,10 +240,85 @@ impl App {
                     crate::OutputFormat::HttpieSession => output::httpie_session,
                 };
 
-                formatter(&cookies, &mut stream)
+                formatter(cookies, &mut stream)
                     .map(|_| None)
                     .wrap_err("Could not output cookies to the provided stream")
             }
         }
+    }
+}
+
+fn filter_hosts(domain: &str, hosts: &[Uri]) -> bool {
+    let cookie_valid_domain = match domain.chars().next() {
+        Some('.') => domain.get(1..).unwrap(),
+        _ => domain,
+    };
+
+    if cookie_valid_domain.is_empty() {
+        return false;
+    }
+
+    hosts.is_empty()
+        || hosts.iter().any(|h| {
+            Some(cookie_valid_domain) == h.host()
+                || h.base_domain()
+                    .as_deref()
+                    .or_else(|| h.host())
+                    // either the base domain or the host should be Some
+                    .unwrap()
+                    .ends_with(cookie_valid_domain)
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_hosts() {
+        let hosts = vec![
+            "https://www.example.com".parse().unwrap(),
+            "https://www.example.org".parse().unwrap(),
+        ];
+
+        assert!(filter_hosts("example.com", &hosts));
+        assert!(filter_hosts("example.org", &hosts));
+        assert!(filter_hosts(".example.com", &hosts));
+        assert!(filter_hosts(".example.org", &hosts));
+        assert!(!filter_hosts("example.net", &hosts));
+        assert!(!filter_hosts(".example.net", &hosts));
+    }
+
+    #[test]
+    fn test_filter_with_empty_hosts() {
+        let hosts = vec![];
+
+        assert!(filter_hosts("example.com", &hosts));
+        assert!(filter_hosts("example.org", &hosts));
+        assert!(filter_hosts(".example.com", &hosts));
+        assert!(filter_hosts(".example.org", &hosts));
+        assert!(filter_hosts("example.net", &hosts));
+        assert!(filter_hosts(".example.net", &hosts));
+    }
+
+    #[test]
+    fn test_filter_with_empty_domain() {
+        let hosts = vec!["https://www.example.com".parse().unwrap()];
+
+        assert!(!filter_hosts("", &hosts));
+    }
+
+    #[test]
+    fn test_filter_wildcard() {
+        let hosts = vec!["https://www.example.com".parse().unwrap()];
+
+        assert!(filter_hosts("example.com", &hosts));
+        assert!(filter_hosts(".example.com", &hosts));
+        assert!(filter_hosts("www.example.com", &hosts));
+        assert!(filter_hosts(".www.example.com", &hosts));
+        assert!(!filter_hosts("example.org", &hosts));
+        assert!(!filter_hosts(".example.org", &hosts));
+        assert!(!filter_hosts("www.example.org", &hosts));
+        assert!(!filter_hosts(".www.example.org", &hosts));
     }
 }
