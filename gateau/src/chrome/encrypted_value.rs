@@ -7,7 +7,7 @@ pub(crate) mod linux;
 pub(crate) mod mac;
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) mod posix;
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 pub(crate) mod windows;
 
 /// Decrypts a cookie value encrypted by Chrome on Unix platforms
@@ -37,7 +37,7 @@ pub(crate) fn decrypt_value<K: AsRef<[u8]>, V: AsRef<[u8]>>(
 
 /// Decrypts a cookie value encrypted by Chrome on Windows
 /// (with AES-256-GCM).
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 pub(crate) fn decrypt_value<K: AsRef<[u8]>, V: AsRef<[u8]>>(
     key: K,
     encrypted_value: V,

@@ -1,5 +1,5 @@
 use base64ct::{Base64, Encoding};
-use color_eyre::eyre::{ensure, eyre};
+use color_eyre::eyre::ensure;
 use windows::Win32::{
     Security::Cryptography::{CryptUnprotectData, CRYPTOAPI_BLOB},
     System::Memory::LocalFree,
@@ -26,7 +26,7 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
     // We assume that `encrypted_value` is a valid buffer for the duration of the call.
     // We check that `data_out.pbData` is not null before creating the `Vec` and that `CryptUnprotectData` returns a success code.
     unsafe {
-        let res = CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).ok()?;
+        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).ok()?;
 
         ensure!(!data_out.pbData.is_null(), "CryptUnprotectData failed");
 

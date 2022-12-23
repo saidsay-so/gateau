@@ -6,6 +6,7 @@
 
 use std::collections::HashMap;
 
+use cached::proc_macro::cached;
 use keyring::{
     credential::{LinuxCredential, PlatformCredential},
     Entry,
@@ -65,6 +66,7 @@ fn get_chrome_v11_password(variant: ChromeVariant) -> color_eyre::Result<String>
 
 /// Gets the key used to encrypt cookies in Chrome on Linux by deriving it from
 /// the password retrieved with the secret service API.
+#[cached(result)]
 pub(crate) fn get_v11_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
     let password = get_chrome_v11_password(variant)?;
     derive_key_from_password(password)

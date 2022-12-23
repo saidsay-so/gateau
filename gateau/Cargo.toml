@@ -28,6 +28,8 @@ tini = "1.3.0"
 tempfile = "3.3.0"
 dirs-next = "2.0.0"
 itertools = "0.10.5"
+rayon = "1.6.1"
+cached = { version = "0.41.0", features = ["proc_macro"], default-features = false }
 
 [features]
 default = []

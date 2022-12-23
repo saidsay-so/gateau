@@ -38,9 +38,11 @@
 //!
 use std::collections::HashMap;
 
+#[cfg(windows)]
+use cached::proc_macro::cached;
 use color_eyre::eyre::Context;
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
-
+use rayon::prelude::*;
 use rusqlite::Connection;
 use serde::Deserialize;
 
@@ -53,7 +55,7 @@ use self::encrypted_value::linux;
 #[cfg(target_os = "macos")]
 use self::encrypted_value::mac;
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 use self::encrypted_value::windows;
 use self::paths::PathProvider;
 
@@ -61,7 +63,7 @@ pub(crate) mod encrypted_value;
 pub(crate) mod paths;
 
 /// Local state stored in `Local State` file.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 pub(crate) struct LocalState {
     #[serde(flatten)]
@@ -112,23 +114,17 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     encrypted_value: V,
     variant: ChromeVariant,
 ) -> color_eyre::Result<String> {
-    use once_cell::sync::OnceCell;
-
     /// Length of the header of the encrypted value, if present.
     const HEADER_LEN: usize = 3;
 
     let encrypted_value = encrypted_value.as_ref();
 
-    // We use static to avoid fetching the key every time we decrypt a cookie.
-    static CHROME_V11_KEY: OnceCell<Vec<u8>> = OnceCell::new();
+    #[cfg(target_os = "linux")]
+    let binding = linux::get_v11_key(variant)?;
 
     let key = match encrypted_value.get(..HEADER_LEN) {
         #[cfg(target_os = "linux")]
-        Some(b"v11") => Some(
-            CHROME_V11_KEY
-                .get_or_try_init(|| linux::get_v11_key(variant))?
-                .as_slice(),
-        ),
+        Some(b"v11") => Some(binding.as_slice()),
         #[cfg(not(target_os = "linux"))]
         Some(b"v11") => unimplemented!("v11 key is not implemented for this platform"),
         Some(b"v10") => Some(posix::CHROME_V10_KEY.as_slice()),
@@ -180,7 +176,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     }
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>>(
     mut encrypted_value: V,
     local_state: &LocalState,
@@ -210,11 +206,20 @@ fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>>(
     }
 }
 
+#[cfg(windows)]
+#[cached(result, key = "PathBuf", convert = "{ PathBuf::from(path) }")]
+fn get_local_state(path: &Path) -> color_eyre::Result<LocalState> {
+    Ok(serde_json::from_reader(std::io::BufReader::new(
+        std::fs::File::open(path)?,
+    ))?)
+}
+
 /// Get cookies from the database.
+#[allow(unused_variables)]
 pub(crate) fn get_cookies(
     conn: &Connection,
     variant: ChromeVariant,
-    #[allow(unused_variables)] path_provider: PathProvider,
+    path_provider: PathProvider,
 ) -> color_eyre::Result<Vec<Cookie<'static>>> {
     let query = "SELECT name, value, encrypted_value, 
                         host_key, path, expires_utc, 
@@ -237,12 +242,10 @@ pub(crate) fn get_cookies(
                 http_only: row.get::<_, bool>(8)?,
             })
         })?
-        .inspect(|res| {
-            if let Err(err) = res {
-                eprintln!("Failed to get cookie: {err}");
-            }
-        })
         .filter_map(|cookie| cookie.ok())
+        // TODO: Is there a better way to do this?
+        .collect::<Vec<_>>()
+        .into_par_iter()
         .map(
             |ChromeCookie {
                  name,
@@ -267,9 +270,7 @@ pub(crate) fn get_cookies(
                     #[cfg(windows)]
                     {
                         let local_state: LocalState =
-                            serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(
-                                path_provider.local_state(),
-                            )?))?;
+                            get_local_state(&path_provider.local_state())?;
                         decrypt_cookie_value(encrypted_value, &local_state)?
                     }
                 };

@@ -1,8 +1,8 @@
+use cached::proc_macro::cached;
 use keyring::{
     credential::{MacCredential, MacKeychainDomain, PlatformCredential},
     Entry,
 };
-use once_cell::sync::OnceCell;
 use pbkdf2::{
     password_hash::{PasswordHasher, SaltString},
     Algorithm, Params, Pbkdf2,
@@ -59,6 +59,7 @@ fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<V
 }
 
 /// Gets the key used to encrypt cookies in Chrome on macOS.
+#[cached(result)]
 pub(crate) fn get_v10_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
     let password = get_v10_password(variant)?;
     derive_key_from_password(password)
