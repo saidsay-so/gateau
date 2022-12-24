@@ -53,7 +53,7 @@ impl FromStr for OutputFormat {
             "human" => Ok(OutputFormat::Human),
             "httpie-session" | "httpie" => Ok(OutputFormat::HttpieSession),
             _ => Err(format!(
-                "'{s}' is not one of the supported output formats (netscape, httpie(-session))"
+                "'{s}' is not one of the supported output formats (netscape, httpie-session)"
             )),
         }
     }
@@ -69,8 +69,16 @@ enum Mode {
         /// Supported formats: netscape, httpie-session
         format: Option<OutputFormat>,
 
+        /// Open the browser in a new context and output the saved cookies when it closes
+        #[bpaf(long)]
+        session: bool,
+
+        /// URL to open in the session
+        #[bpaf(long)]
+        session_urls: Vec<Uri>,
+
         /// Hosts to filter cookies by
-        #[bpaf(positional("HOST"), many)]
+        #[bpaf(positional("HOSTS"), many)]
         hosts: Vec<Uri>,
     },
 
@@ -84,34 +92,8 @@ enum Mode {
         command: WrappedCmd,
 
         /// Arguments for the wrapped command
-        #[bpaf(any("ARG"), many)]
+        #[bpaf(any("ARGS"), many)]
         forwarded_args: Vec<OsString>,
-    },
-
-    /// Open the browser in a new context and output the saved cookies when it closes
-    #[bpaf(command)]
-    Session {
-        /// Format to output cookies in
-        ///
-        /// Supported formats: netscape, httpie-session
-        #[bpaf(short, long)]
-        format: Option<OutputFormat>,
-
-        /// Browser to open
-        ///
-        /// Supported browsers: chrome, chromium, firefox
-        #[bpaf(positional("BROWSER"))]
-        browser: Browser,
-
-        /// URL to open
-        #[bpaf(positional("URL"))]
-        url: Option<Uri>,
-
-        /// Hosts to filter cookies by
-        ///
-        /// If no hosts are specified, all cookies will be output
-        #[bpaf(positional("HOST"), many)]
-        hosts: Vec<Uri>,
     },
 }
 
@@ -124,8 +106,8 @@ struct Args {
     cookie_db: Option<PathBuf>,
 
     /// Browser(s) to import cookies from
-    #[bpaf(long)]
-    browsers: Vec<Browser>,
+    #[bpaf(short, long)]
+    browser: Option<Browser>,
 
     /// Bypass the lock on the database (can cause read errors)
     #[bpaf(long)]

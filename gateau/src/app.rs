@@ -1,14 +1,14 @@
 use std::{
-    collections::HashSet,
     ffi::OsStr,
     io::{self, Write},
+    path::PathBuf,
     process::Command,
     str::FromStr,
     sync::Arc,
 };
 
 use color_eyre::{
-    eyre::{ensure, eyre, Context},
+    eyre::{ensure, Context},
     Result,
 };
 use cookie::Cookie;
@@ -67,26 +67,25 @@ impl App {
         Self { args }
     }
 
-    fn get_cookies(&self, browser: Browser, hosts: &[Uri]) -> Result<Vec<Cookie<'static>>> {
-        let hosts: Vec<_> = hosts.to_vec();
+    fn get_cookies(
+        cookie_db_path: Option<PathBuf>,
+        bypass_lock: bool,
+        browser: Browser,
+        hosts: Vec<Uri>,
+    ) -> Result<Vec<Cookie<'static>>> {
         let hosts = Arc::from(hosts);
 
         match browser {
             Browser::Firefox => {
                 let path_provider = firefox::paths::PathProvider::default_profile();
 
-                let db_path = self
-                    .args
-                    .cookie_db
-                    .clone()
-                    .ok_or_else(|| eyre!("No path found for database path"))
-                    .unwrap_or_else(|_| path_provider.cookies_database());
+                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
 
-                let conn = crate::utils::get_connection(db_path, self.args.bypass_lock)?;
+                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
 
                 let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |host| {
-                    filter_hosts(host, &hosts)
+                sqlite_predicate_builder(&conn, "host_filter", move |cookie_host| {
+                    filter_hosts(cookie_host, &hosts)
                 })?;
 
                 firefox::get_cookies(&conn)
@@ -101,14 +100,9 @@ impl App {
 
                 let path_provider = chrome::paths::PathProvider::default_profile(chrome_variant);
 
-                let db_path = self
-                    .args
-                    .cookie_db
-                    .clone()
-                    .ok_or_else(|| eyre!("No path found for database path"))
-                    .unwrap_or_else(|_| path_provider.cookies_database());
+                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
 
-                let conn = crate::utils::get_connection(db_path, self.args.bypass_lock)?;
+                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
 
                 let hosts = Arc::clone(&hosts);
                 sqlite_predicate_builder(&conn, "host_filter", move |host| {
@@ -153,24 +147,22 @@ impl App {
         Ok(status.code().unwrap())
     }
 
-    pub fn run(&mut self) -> Result<Option<i32>> {
-        let browsers = if self.args.browsers.is_empty() {
-            &[Browser::Firefox]
-        } else {
-            self.args.browsers.as_slice()
-        };
+    pub fn run(self) -> Result<Option<i32>> {
+        let browser = self.args.browser.unwrap_or(Browser::Firefox);
 
-        let browsers: HashSet<Browser> = HashSet::from_iter(browsers.iter().cloned());
-
-        match &self.args.mode {
-            crate::Mode::Output { format, hosts } => {
-                let cookies = browsers
-                    .into_iter()
-                    .map(|browser| self.get_cookies(browser, hosts))
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>();
+        match self.args.mode {
+            crate::Mode::Output {
+                format,
+                hosts,
+                session,
+                session_urls,
+            } => {
+                let cookies = if session {
+                    let session = SessionBuilder::new(browser, session_urls, hosts).build()?;
+                    session.cookies().to_vec()
+                } else {
+                    App::get_cookies(self.args.cookie_db, self.args.bypass_lock, browser, hosts)?
+                };
 
                 let mut stream = std::io::stdout().lock();
 
@@ -207,42 +199,19 @@ impl App {
                     }
                 };
 
-                let cookies = browsers
-                    .into_iter()
-                    .map(|browser| self.get_cookies(browser, &[]))
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>();
+                let cookies = App::get_cookies(
+                    self.args.cookie_db,
+                    self.args.bypass_lock,
+                    browser,
+                    Vec::new(),
+                )?;
 
-                let capacity = (128 * cookies.len()).next_power_of_two();
+                let capacity = (64 * cookies.len()).next_power_of_two();
                 let mut cookies_buf = Vec::with_capacity(capacity);
 
                 formatter(&cookies, &mut cookies_buf)?;
 
-                App::wrap_command(cmd, option, forwarded_args, cookies_buf).map(Some)
-            }
-
-            crate::Mode::Session {
-                browser,
-                url,
-                format,
-                hosts,
-            } => {
-                let session = SessionBuilder::new(*browser, url.clone(), hosts.clone()).build()?;
-                let cookies = session.cookies();
-
-                let mut stream = std::io::stdout().lock();
-
-                let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
-                    crate::OutputFormat::Netscape => output::netscape,
-                    crate::OutputFormat::Human => output::human,
-                    crate::OutputFormat::HttpieSession => output::httpie_session,
-                };
-
-                formatter(cookies, &mut stream)
-                    .map(|_| None)
-                    .wrap_err("Could not output cookies to the provided stream")
+                App::wrap_command(cmd, option, &forwarded_args, cookies_buf).map(Some)
             }
         }
     }

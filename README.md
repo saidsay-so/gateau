@@ -42,24 +42,6 @@ It can also be used to wrap commands (curl, wget, httpie) and import cookies dir
 having to use shell's [process substitution](https://en.wikipedia.org/wiki/Process_substitution) or manually create temporary files.
 It imports cookies from Firefox by default if the `--browser` flag is not specified.
 
-### Aliases
-
-You can define aliases to make gateau easier to use.
-For example, you can add the following aliases to your shell configuration file:
-
-```bash
-alias curlfire="curl -b <(gateau output --format netscape)"
-alias chrul="curl -b <(gateau output --format netscape --browser chromium)"
-alias wgetfire="wget --load-cookies <(gateau output --format netscape)"
-alias wgetchr="wget --load-cookies <(gateau output --format netscape --browser chromium)"
-alias httpfire="http --session-read-only <(gateau output --format httpie-session)"
-alias httpchr="http --session-read-only <(gateau output --format httpie-session --browser chromium)"
-```
-
-Please note that this would probably not work as intended
-if you use `curl` with [`-:`](https://curl.se/docs/manpage.html) and multiple URLs,
-as the cookies would be imported for the first request only.
-
 ### Output (piping) cookies
 
 #### cookies.txt format (curl, wget)
@@ -76,7 +58,7 @@ and curl will import those which match the requested domains
 and use them for the request.
 
 ```bash
-wget --load-cookies <(gateau output --format netscape) https://example.com
+wget --load-cookies <(gateau output --browser=chrome --format netscape) https://example.com
 ```
 
 Since wget can also import cookies from a file in Netscape "cookies.txt" format,
@@ -90,7 +72,7 @@ The current implementation should be compatible with httpie 3.2.0+,
 but it could change if httpie stop supporting this format in the future.
 
 ```bash
-http --session-read-only <(gateau output --format httpie-session) example.com
+http --session-read-only <(gateau output --format httpie-session example.com) example.com
 ```
 
 In this example, gateau will output cookies from Firefox in httpie session format,
@@ -98,8 +80,6 @@ and httpie will import it as an anonymous session.
 
 You can also save named sessions,
 by writing them to file which can be then used with `--session`:
-
-#### Example
 
 ```bash
 # Just an example, should be changed
@@ -112,10 +92,30 @@ gateau output --format=httpie-session $HOST > $CONFIG_PATH/httpie/sessions/$HOST
 https --session=$SESSION_NAME $HOST
 ```
 
+### Aliases
+
+You can define aliases to make gateau easier to use.
+For example, you can add the following aliases to your shell configuration file:
+
+```bash
+alias curlfire="curl -b <(gateau output --format netscape)"
+alias chrul="curl -b <(gateau output --format netscape --browser chromium)"
+alias wgetfire="wget --load-cookies <(gateau output --format netscape)"
+alias wgetchr="wget --load-cookies <(gateau output --format netscape --browser chromium)"
+alias httpfire="http --session-read-only <(gateau output --format httpie-session)"
+alias httpchr="http --session-read-only <(gateau output --format httpie-session --browser chromium)"
+alias httpsfire="https --session-read-only <(gateau output --format httpie-session)"
+alias httpschr="https --session-read-only <(gateau output --format httpie-session --browser chromium)"
+```
+
+Please note that this would probably not work as intended
+if you use `curl` with [`-:`](https://curl.se/docs/manpage.html) and multiple URLs,
+as the cookies would be imported for the first request only.
+
 ### Windows users
 
-If you are using Windows, you can either use a shell that supports process substitution
-or use the `wrap` command.
+If you are using Windows, you can either use a shell which supports process substitution
+(bash, zsh, fish, etc.) or use the `wrap` command.
 
 ### Wrapping commands
 
@@ -163,10 +163,11 @@ Piping is the most common way to use gateau, as it is the most flexible.
 It allows you to use gateau with any command, as long as the used shell supports
 [process substitution](https://en.wikipedia.org/wiki/Process_substitution).
 It is the most secure, as it does not use a temporary file
-to communicate with the command.
-However, it is not always possible to use
-[process substitution](https://serverfault.com/questions/688645/powershells-equivalent-to-bashs-process-substitution),
-as it is not supported by all shells or OSes (Windows/cmd.exe for example).
+to pass the cookies to the command.
+However, it is not always 
+[possible](https://serverfault.com/questions/688645/powershells-equivalent-to-bashs-process-substitution)
+to use process substitution,
+as it is not supported by all shells (cmd.exe or Powershell for example).
 
 #### Wrapping
 
@@ -196,20 +197,52 @@ gateau wrap --browser=firefox --session -- curl https://example.com
 ## Help
 
 ```
+> gateau --help
+
 A simple wrapper to import cookies from browsers for curl, wget and httpie.
 
 Usage: [-c ARG] [-b ARG] [--bypass-lock] COMMAND ...
 
 Available options:
     -c, --cookie-db <ARG>  Ccookie database path
-    -b, --browser <ARG>    Browser to import cookies from
+    -b, --browser <ARG>    Browser(s) to import cookies from
         --bypass-lock      Bypass the lock on the database (can cause read errors)
     -h, --help             Prints help information
     -V, --version          Prints version information
 
 Available commands:
     output  Output cookies to stdout in the specified format
-    wrap    Wrap a command (curl, wget, httpie) with the imported cookies
+    wrap    Wrap a command with the imported cookies
+
+> gateau output --help
+
+Output cookies to stdout in the specified format
+
+Usage: [--format ARG] [--session] --session-urls ARG... <HOSTS>...
+
+Available positional items:
+    <HOSTS>  Hosts to filter cookies by
+
+Available options:
+        --format <ARG>        Output format
+                              Supported formats: netscape, httpie-session
+        --session             Open the browser in a new context and output the saved cookies when it closes
+        --session-urls <ARG>  URL to open in the session
+    -h, --help                Prints help information
+
+> gateau wrap --help
+
+Wrap a command with the imported cookies
+
+Usage: <COMMAND> <ARGS>...
+
+Available positional items:
+    <COMMAND>  Command which should be wrapped
+               Supported commands: curl, wget, http, https
+    <ARGS>      Arguments for the wrapped command
+
+Available options:
+    -h, --help  Prints help information
 ```
 
 ## Performance
@@ -219,26 +252,21 @@ really optimized yet. Here are some non-scientific benchmarks:
 
 ```
 Benchmark 1: gateau wrap curl localhost:8000
-  Time (mean ± σ):      14.2 ms ±   2.9 ms    [User: 8.0 ms, System: 5.3 ms]
-  Range (min … max):    10.4 ms …  30.3 ms    176 runs
+  Time (mean ± σ):      14.4 ms ±   2.3 ms    [User: 6.3 ms, System: 5.0 ms]
+  Range (min … max):    10.7 ms …  20.5 ms    200 runs
 
-Benchmark 2: curl -b <(gateau output) localhost:8000
-  Time (mean ± σ):       9.5 ms ±   1.2 ms    [User: 4.3 ms, System: 3.0 ms]
-  Range (min … max):     7.8 ms …  17.0 ms    208 runs
+Benchmark 2: curl <(gateau output) localhost:8000
+  Time (mean ± σ):       9.8 ms ±   1.6 ms    [User: 3.6 ms, System: 3.2 ms]
+  Range (min … max):     7.3 ms …  21.1 ms    200 runs
 
-Benchmark 3: curl -b /tmp/gateau-test localhost:8000
-  Time (mean ± σ):       6.5 ms ±   2.2 ms    [User: 3.3 ms, System: 2.9 ms]
-  Range (min … max):     3.7 ms …  16.5 ms    213 runs
-
-Benchmark 4: curl localhost:8000
-  Time (mean ± σ):       7.8 ms ±   2.5 ms    [User: 3.5 ms, System: 3.7 ms]
-  Range (min … max):     3.8 ms …  14.1 ms    256 runs
+Benchmark 3: curl localhost:8000
+  Time (mean ± σ):       9.2 ms ±   2.1 ms    [User: 3.4 ms, System: 3.0 ms]
+  Range (min … max):     6.3 ms …  14.3 ms    200 runs
 
 Summary
-  'curl -b /tmp/gateau-test localhost:8000' ran
-    1.19 ± 0.55 times faster than 'curl localhost:8000'
-    1.45 ± 0.52 times faster than 'curl -b <(gateau output) localhost:8000'
-    2.18 ± 0.85 times faster than 'gateau wrap curl localhost:8000'
+  'curl localhost:8000' ran
+    1.07 ± 0.30 times faster than 'curl <(gateau output) localhost:8000'
+    1.56 ± 0.44 times faster than 'gateau wrap curl localhost:8000'
 ```
 
 > The benchmarks were done with [hyperfine](https://github.com/sharkdp/hyperfine),

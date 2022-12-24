@@ -38,11 +38,9 @@
 //!
 use std::collections::HashMap;
 
-#[cfg(windows)]
-use cached::proc_macro::cached;
 use color_eyre::eyre::Context;
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
-use rayon::prelude::*;
+use once_cell::sync::OnceCell;
 use rusqlite::Connection;
 use serde::Deserialize;
 
@@ -56,11 +54,12 @@ use self::encrypted_value::linux;
 use self::encrypted_value::mac;
 
 #[cfg(windows)]
-use self::encrypted_value::windows;
-use self::paths::PathProvider;
+use {self::encrypted_value::windows, std::path::Path};
 
 pub(crate) mod encrypted_value;
 pub(crate) mod paths;
+
+use self::paths::PathProvider;
 
 /// Local state stored in `Local State` file.
 #[derive(Debug, Clone, Deserialize)]
@@ -81,6 +80,32 @@ struct ChromeCookie {
     same_site: i64,
     http_only: bool,
 }
+
+// TODO: Do we need support for multiple variants at the same time?
+// struct ChromeCacheKeyVariants {
+//     chromium: OnceCell<Vec<u8>>,
+//     chrome: OnceCell<Vec<u8>>,
+// }
+
+// impl ChromeCacheKeyVariants {
+//     const fn default() -> Self {
+//         Self {
+//             chromium: OnceCell::new(),
+//             chrome: OnceCell::new(),
+//         }
+//     }
+// }
+
+// impl Index<ChromeVariant> for ChromeCacheKeyVariants {
+//     type Output = OnceCell<Vec<u8>>;
+
+//     fn index(&self, index: ChromeVariant) -> &Self::Output {
+//         match index {
+//             ChromeVariant::Chromium => &self.chromium,
+//             ChromeVariant::Chrome => &self.chrome,
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ChromeVariant {
@@ -119,12 +144,15 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
 
     let encrypted_value = encrypted_value.as_ref();
 
-    #[cfg(target_os = "linux")]
-    let binding = linux::get_v11_key(variant)?;
+    static KEY_CACHE: OnceCell<Vec<u8>> = OnceCell::new();
 
     let key = match encrypted_value.get(..HEADER_LEN) {
         #[cfg(target_os = "linux")]
-        Some(b"v11") => Some(binding.as_slice()),
+        Some(b"v11") => Some(
+            KEY_CACHE
+                .get_or_try_init(|| linux::get_v11_key(variant))?
+                .as_slice(),
+        ),
         #[cfg(not(target_os = "linux"))]
         Some(b"v11") => unimplemented!("v11 key is not implemented for this platform"),
         Some(b"v10") => Some(posix::CHROME_V10_KEY.as_slice()),
@@ -146,6 +174,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     }
 }
 
+/// Decrypt a cookie value.
 #[cfg(target_os = "macos")]
 fn decrypt_cookie_value<V: AsRef<[u8]>>(
     encrypted_value: V,
@@ -156,8 +185,10 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     /// Length of the header of the encrypted value, if present.
     const HEADER_LEN: usize = 3;
 
+    static KEY_CACHE: OnceCell<Vec<u8>> = OnceCell::new();
+
     let key = match encrypted_value.get(..HEADER_LEN) {
-        Some(b"v10") => Some(mac::get_v10_key(variant)?),
+        Some(b"v10") => Some(KEY_CACHE.get_or_try_init(|| mac::get_v10_key(variant))?),
         _ => None,
     };
 
@@ -176,23 +207,28 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     }
 }
 
+/// Decrypt a cookie value.
 #[cfg(windows)]
-fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>>(
+fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>, P: AsRef<Path>>(
     mut encrypted_value: V,
-    local_state: &LocalState,
+    local_state: P,
 ) -> color_eyre::Result<String> {
     let encrypted_value_ref = encrypted_value.as_ref();
 
     /// Length of the header of the encrypted value, if present.
     const HEADER_LEN: usize = 3;
 
+    static KEY_CACHE: OnceCell<Vec<u8>> = OnceCell::new();
+
     let key = match encrypted_value_ref.get(..HEADER_LEN) {
-        Some(b"v10") => {
-            let encrypted_key = windows::get_encrypted_key(local_state)?.ok_or_else(|| {
+        Some(b"v10") => Some(KEY_CACHE.get_or_try_init(|| {
+            let local_state = get_local_state(local_state.as_ref())?;
+
+            let encrypted_key = windows::get_encrypted_key(&local_state)?.ok_or_else(|| {
                 color_eyre::eyre::eyre!("Encrypted key is not available in the local state")
             })?;
-            Some(windows::decrypt_dpapi_encrypted_key(encrypted_key)?)
-        }
+            windows::decrypt_dpapi_encrypted_key(encrypted_key)
+        })?),
         _ => None,
     };
 
@@ -207,7 +243,6 @@ fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>>(
 }
 
 #[cfg(windows)]
-#[cached(result, key = "PathBuf", convert = "{ PathBuf::from(path) }")]
 fn get_local_state(path: &Path) -> color_eyre::Result<LocalState> {
     Ok(serde_json::from_reader(std::io::BufReader::new(
         std::fs::File::open(path)?,
@@ -243,9 +278,6 @@ pub(crate) fn get_cookies(
             })
         })?
         .filter_map(|cookie| cookie.ok())
-        // TODO: Is there a better way to do this?
-        .collect::<Vec<_>>()
-        .into_par_iter()
         .map(
             |ChromeCookie {
                  name,
@@ -269,9 +301,7 @@ pub(crate) fn get_cookies(
 
                     #[cfg(windows)]
                     {
-                        let local_state: LocalState =
-                            get_local_state(&path_provider.local_state())?;
-                        decrypt_cookie_value(encrypted_value, &local_state)?
+                        decrypt_cookie_value(encrypted_value, path_provider.local_state())?
                     }
                 };
 

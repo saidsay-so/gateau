@@ -16,17 +16,18 @@ use super::Browser;
 /// Builder for a session.
 /// A session is a temporary browser instance that is used to retrieve cookies.
 #[derive(Debug, Clone)]
+#[must_use]
 pub(crate) struct SessionBuilder {
     browser: Browser,
-    first_url: Option<Uri>,
+    urls: Vec<Uri>,
     hosts: Vec<Uri>,
 }
 
 impl<'a> SessionBuilder {
-    pub fn new<U: Into<Uri>>(browser: Browser, first_url: Option<U>, hosts: Vec<Uri>) -> Self {
+    pub fn new(browser: Browser, urls: Vec<Uri>, hosts: Vec<Uri>) -> Self {
         Self {
             browser,
-            first_url: first_url.map(|u| u.into()),
+            urls,
             hosts,
         }
     }
@@ -36,10 +37,7 @@ impl<'a> SessionBuilder {
 
         eprintln!("Opening a {} session", self.browser);
 
-        let url = self
-            .first_url
-            .map(|u| u.to_string())
-            .unwrap_or_else(|| String::from("about:blank"));
+        let url: Vec<_> = self.urls.into_iter().map(|u| u.to_string()).collect();
 
         let hosts = Arc::from(self.hosts);
 
@@ -50,7 +48,7 @@ impl<'a> SessionBuilder {
                     .arg("-profile")
                     .arg(session_context.path())
                     .arg("-new-instance")
-                    .arg(url)
+                    .args(url)
                     .stderr(Stdio::null())
                     .stdout(Stdio::null())
                     .spawn()
@@ -58,8 +56,10 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider =
-                    crate::firefox::paths::PathProvider::new(session_context.path(), Some(""));
+                let path_provider = crate::firefox::paths::PathProvider::new::<_, OsString>(
+                    session_context.path(),
+                    None,
+                );
 
                 let db_path = path_provider.cookies_database();
 
@@ -96,7 +96,7 @@ impl<'a> SessionBuilder {
                 let mut child = Command::new(cmd)
                     .arg("--new-window")
                     .arg(user_data_arg)
-                    .arg(url)
+                    .args(url)
                     .stderr(Stdio::null())
                     .stdout(Stdio::null())
                     .spawn()

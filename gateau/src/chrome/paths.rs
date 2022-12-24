@@ -7,7 +7,7 @@ use std::{
 
 pub(crate) struct PathProvider {
     _base_dir: PathBuf,
-    _profile: OsString,
+    _profile: Option<OsString>,
     profile_dir: PathBuf,
 }
 
@@ -17,17 +17,17 @@ impl PathProvider {
     pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
 
-        let profile = profile
-            .map(|p| p.as_ref().into())
-            .unwrap_or_else(|| OsString::from("Default"));
-
         Self {
-            profile_dir: if cfg!(windows) {
-                base_dir.join("User Data").join(&profile)
+            profile_dir: if let Some(profile) = profile.as_ref().map(|p| p.as_ref()) {
+                if cfg!(windows) {
+                    base_dir.join("User Data").join(profile)
+                } else {
+                    base_dir.join(profile)
+                }
             } else {
-                base_dir.join(&profile)
+                base_dir.clone()
             },
-            _profile: profile,
+            _profile: profile.map(|p| p.as_ref().into()),
             _base_dir: base_dir,
         }
     }
@@ -42,11 +42,13 @@ impl PathProvider {
         .unwrap()
         .join(PathProvider::variant_base_folder(variant));
 
-        Self::new::<_, &OsStr>(root_dir, None)
+        let default = "Default";
+
+        Self::new(root_dir, Some(default))
     }
 
     /// Returns the subpath of the base directory which changes depending on the variant.
-    fn variant_base_folder(variant: ChromeVariant) -> &'static str {
+    const fn variant_base_folder(variant: ChromeVariant) -> &'static str {
         if cfg!(any(windows, target_os = "macos")) {
             match variant {
                 ChromeVariant::Chromium => "Chromium",
@@ -61,8 +63,9 @@ impl PathProvider {
     }
 
     /// Returns the path to the local state file.
+    #[cfg(windows)]
     pub(crate) fn local_state(&self) -> PathBuf {
-        self.profile_dir.join("Local State")
+        self.base_dir.join("Local State")
     }
 
     /// Returns the path to the cookies database.

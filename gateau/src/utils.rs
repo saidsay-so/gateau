@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{ffi::OsString, path::Path};
 
 use rusqlite::{functions::FunctionFlags, Connection, OpenFlags};
 
@@ -7,9 +7,17 @@ pub fn get_connection<P: AsRef<Path>>(
     db_path: P,
     bypass_lock: bool,
 ) -> color_eyre::Result<Connection> {
-    let connection = if bypass_lock {
+    let conn = if bypass_lock {
         // This can lead to read errors if the browser is still running and writing to the database.
-        let immutable_path_uri = format!("file:{}?immutable=1", db_path.as_ref().display());
+        let db_path = db_path.as_ref().as_os_str();
+        let immutable_path_uri = {
+            let mut path = OsString::with_capacity(17 + db_path.len());
+            path.push("file:");
+            path.push(db_path);
+            path.push("?immutable=1");
+            path
+        };
+
         Connection::open_with_flags(
             immutable_path_uri,
             OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
@@ -18,7 +26,7 @@ pub fn get_connection<P: AsRef<Path>>(
         Connection::open_with_flags(db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
     }?;
 
-    Ok(connection)
+    Ok(conn)
 }
 
 pub(crate) fn sqlite_predicate_builder<F, S: AsRef<str>>(

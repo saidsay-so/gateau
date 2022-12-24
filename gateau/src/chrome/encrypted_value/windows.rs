@@ -9,7 +9,8 @@ use windows::Win32::{
 ///
 /// # Safety
 ///
-/// For the function call to be safe, `encrypted_value` must be a valid buffer for the entire duration of the call.
+/// For the function call to be safe, `encrypted_value` must be a valid buffer for the entire duration of the call,
+/// which is normally guaranteed by the borrow checker.
 #[allow(unsafe_code)]
 pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Vec<u8>> {
     let data_in = CRYPTOAPI_BLOB {

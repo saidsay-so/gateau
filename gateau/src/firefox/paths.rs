@@ -5,41 +5,36 @@ use std::{
 
 pub(crate) struct PathProvider {
     _base_dir: PathBuf,
-    _profile: OsString,
+    _profile: Option<OsString>,
     profile_dir: PathBuf,
 }
 
 impl PathProvider {
     /// Create a new path provider for the given profile.
     /// If no profile is given, the default profile is queried and used.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if no default profile can be found.
     pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
 
-        let profile = profile.map(|p| p.as_ref().into()).unwrap_or_else(|| {
-            let profiles = tini::Ini::from_file(&base_dir.join("profiles.ini"))
-                .expect("Cannot parse Firefox profiles.ini file");
-
-            PathProvider::get_default_profile(profiles)
-                .expect("Cannot get Firefox default profile")
-                .into()
-        });
-
         Self {
-            profile_dir: if cfg!(any(windows, target_os = "macos")) {
-                base_dir.join("Profiles").join(&profile)
+            _base_dir: base_dir.clone(),
+            profile_dir: if let Some(profile) = profile.as_ref().map(|p| p.as_ref()) {
+                if cfg!(any(windows, target_os = "macos")) {
+                    base_dir.join("Profiles").join(profile)
+                } else {
+                    base_dir.join(profile)
+                }
             } else {
-                base_dir.join(&profile)
+                base_dir
             },
-            _profile: profile,
-            _base_dir: base_dir,
+            _profile: profile.map(|p| p.as_ref().into()),
         }
     }
 
     /// Returns a path provider for the default profile.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if no default profile can be found.
     pub(crate) fn default_profile() -> Self {
         let root_dir = if cfg!(any(windows, target_os = "macos")) {
             dirs_next::config_dir().unwrap()
@@ -52,7 +47,13 @@ impl PathProvider {
             ".mozilla/firefox"
         });
 
-        Self::new::<_, &OsStr>(root_dir, None)
+        let profiles = tini::Ini::from_file(&root_dir.join("profiles.ini"))
+            .expect("Cannot parse Firefox profiles.ini file");
+
+        let default = PathProvider::get_default_profile(profiles)
+            .expect("Cannot get Firefox default profile");
+
+        Self::new(root_dir, Some(default))
     }
 
     /// Get the default profile's name from the profiles.ini file.
