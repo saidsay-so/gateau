@@ -40,6 +40,7 @@ impl FromStr for WrappedCmd {
 #[derive(Debug, Clone, Copy)]
 enum OutputFormat {
     Netscape,
+    #[cfg(feature = "human")]
     Human,
     HttpieSession,
 }
@@ -50,6 +51,7 @@ impl FromStr for OutputFormat {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "netscape" => Ok(OutputFormat::Netscape),
+            #[cfg(feature = "human")]
             "human" => Ok(OutputFormat::Human),
             "httpie-session" | "httpie" => Ok(OutputFormat::HttpieSession),
             _ => Err(format!(
@@ -106,6 +108,8 @@ struct Args {
     cookie_db: Option<PathBuf>,
 
     /// Browser(s) to import cookies from
+    ///
+    /// Supported browsers: chrome, chromium, firefox
     #[bpaf(short, long)]
     browser: Option<Browser>,
 

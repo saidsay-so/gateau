@@ -24,9 +24,8 @@ use std::{
     io::{self, Write},
 };
 
-use cookie::{time::format_description, Cookie};
+use cookie::Cookie;
 
-use itertools::Itertools;
 use serde::Serialize;
 
 /// Output cookies in Netscape (cookies.txt) format, recognized by curl and wget.
@@ -68,8 +67,11 @@ pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::
     Ok(())
 }
 
+#[cfg(feature = "human")]
 pub fn human<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Result<()> {
     use color_eyre::owo_colors::OwoColorize;
+    use cookie::time::format_description;
+    use itertools::Itertools;
 
     let format =
         format_description::parse("[weekday], [day] [month] [year] [hour]:[minute]:[second] GMT")

@@ -168,6 +168,7 @@ impl App {
 
                 let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
                     crate::OutputFormat::Netscape => output::netscape,
+                    #[cfg(feature = "human")]
                     crate::OutputFormat::Human => output::human,
                     crate::OutputFormat::HttpieSession => output::httpie_session,
                 };
