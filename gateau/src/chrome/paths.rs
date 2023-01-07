@@ -13,7 +13,7 @@ pub(crate) struct PathProvider {
 
 impl PathProvider {
     /// Create a new path provider for the given profile and variant.
-    /// If no profile is given, the default profile is used.
+    /// If no profile is given, the root dir is used as the profile dir.
     pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
 
@@ -65,7 +65,7 @@ impl PathProvider {
     /// Returns the path to the local state file.
     #[cfg(windows)]
     pub(crate) fn local_state(&self) -> PathBuf {
-        self.base_dir.join("Local State")
+        self._base_dir.join("Local State")
     }
 
     /// Returns the path to the cookies database.

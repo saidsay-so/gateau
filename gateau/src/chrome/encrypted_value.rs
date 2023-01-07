@@ -10,7 +10,7 @@ pub(crate) mod posix;
 #[cfg(windows)]
 pub(crate) mod windows;
 
-/// Decrypts a cookie value encrypted by Chrome on Unix platforms
+/// Decrypts a cookie value encrypted by Chrome on Unix platforms (including macOS)
 /// (with AES-128-CBC).
 #[cfg(unix)]
 pub(crate) fn decrypt_value<K: AsRef<[u8]>, V: AsRef<[u8]>>(
