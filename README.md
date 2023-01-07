@@ -39,8 +39,25 @@ gateau can be used to output cookies in different formats, notably `netscape`
 format which is used by curl and wget to import cookies from a file,
 and httpie sessions.
 It can also be used to wrap commands (curl, wget, httpie) and import cookies directly without
-having to use shell's [process substitution](https://en.wikipedia.org/wiki/Process_substitution) or manually create temporary files.
+having to use shell's [process substitution](https://en.wikipedia.org/wiki/Process_substitution) 
+or manually create temporary files.
 It imports cookies from Firefox by default if the `--browser` flag is not specified.
+
+### Support
+
+#### Browsers
+
+- Google Chrome
+- Chromium
+- Firefox
+
+Since almost all other browsers are Chrome-derivatives, it should be straightforward to
+add support for them.
+
+#### Output format
+
+- Netscape cookies.txt
+- httpie session (experimental)
 
 ### Output (piping) cookies
 
