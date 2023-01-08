@@ -268,22 +268,26 @@ gateau is written in Rust, so it should be pretty fast, even if it is not
 really optimized yet. Here are some non-scientific benchmarks:
 
 ```
-Benchmark 1: gateau wrap curl localhost:8000
-  Time (mean ± σ):      14.4 ms ±   2.3 ms    [User: 6.3 ms, System: 5.0 ms]
-  Range (min … max):    10.7 ms …  20.5 ms    200 runs
+Benchmark 1: gateau wrap --bypass-lock curl localhost:8000
+  Time (mean ± σ):      10.9 ms ±   2.4 ms    [User: 5.4 ms, System: 5.5 ms]
+  Range (min … max):     7.0 ms …  16.6 ms    1000 runs
 
-Benchmark 2: curl <(gateau output) localhost:8000
-  Time (mean ± σ):       9.8 ms ±   1.6 ms    [User: 3.6 ms, System: 3.2 ms]
-  Range (min … max):     7.3 ms …  21.1 ms    200 runs
+Benchmark 2: curl -b <(gateau --bypass-lock output) localhost:8000
+  Time (mean ± σ):       8.3 ms ±   2.6 ms    [User: 4.3 ms, System: 4.0 ms]
+  Range (min … max):     4.1 ms …  15.3 ms    1000 runs
+
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
 
 Benchmark 3: curl localhost:8000
-  Time (mean ± σ):       9.2 ms ±   2.1 ms    [User: 3.4 ms, System: 3.0 ms]
-  Range (min … max):     6.3 ms …  14.3 ms    200 runs
+  Time (mean ± σ):       7.3 ms ±   2.5 ms    [User: 4.0 ms, System: 3.5 ms]
+  Range (min … max):     3.7 ms …  12.3 ms    1000 runs
+
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
 
 Summary
   'curl localhost:8000' ran
-    1.07 ± 0.30 times faster than 'curl <(gateau output) localhost:8000'
-    1.56 ± 0.44 times faster than 'gateau wrap curl localhost:8000'
+    1.15 ± 0.54 times faster than 'curl -b <(gateau --bypass-lock output) localhost:8000'
+    1.50 ± 0.62 times faster than 'gateau wrap --bypass-lock curl localhost:8000'```
 ```
 
 > The benchmarks were done with [hyperfine](https://github.com/sharkdp/hyperfine),
