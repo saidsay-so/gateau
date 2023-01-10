@@ -51,12 +51,12 @@ It imports cookies from Firefox by default if the `--browser` flag is not specif
 - Chromium
 - Firefox
 
-Since almost all other browsers are Chrome-derivatives, it should be straightforward to
-add support for them.
+Note: Since almost all other browsers are Chrome derivatives, it should be straightforward to
+add support for them. Please open an issue if you would like to add one!
 
-#### Output format
+#### Output formats
 
-- Netscape cookies.txt
+- Netscape "cookies.txt"
 - httpie session (experimental)
 
 ### Output (piping) cookies
@@ -96,9 +96,10 @@ In this example, gateau will output cookies from Firefox in httpie session forma
 and httpie will import it as an anonymous session.
 
 You can also save named sessions,
-by writing them to file which can be then used with `--session`:
+by writing them to file which can be then used with `https --session`:
 
 ```bash
+# TODO: Maybe add a dedicated feature?
 # Just an example, should be changed
 HOST=adventofcode.com
 SESSION_NAME=aoc
@@ -109,25 +110,18 @@ gateau output --format=httpie-session $HOST > $CONFIG_PATH/httpie/sessions/$HOST
 https --session=$SESSION_NAME $HOST
 ```
 
-### Aliases
+### Browser session
 
-You can define aliases to make gateau easier to use.
-For example, you can add the following aliases to your shell configuration file:
+It is possible to use gateau to create a browser session within a new context,
+and export the cookies after the session termination.
 
 ```bash
-alias curlfire="curl -b <(gateau output --format netscape)"
-alias chrul="curl -b <(gateau output --format netscape --browser chromium)"
-alias wgetfire="wget --load-cookies <(gateau output --format netscape)"
-alias wgetchr="wget --load-cookies <(gateau output --format netscape --browser chromium)"
-alias httpfire="http --session-read-only <(gateau output --format httpie-session)"
-alias httpchr="http --session-read-only <(gateau output --format httpie-session --browser chromium)"
-alias httpsfire="https --session-read-only <(gateau output --format httpie-session)"
-alias httpschr="https --session-read-only <(gateau output --format httpie-session --browser chromium)"
+gateau wrap --browser=chromium --session -- curl https://example.com
 ```
 
-Please note that this would probably not work as intended
-if you use `curl` with [`-:`](https://curl.se/docs/manpage.html) and multiple URLs,
-as the cookies would be imported for the first request only.
+```bash
+gateau output --session https://example.com
+```
 
 ### Windows users
 
@@ -202,14 +196,25 @@ if the database is being modified at the same time, especially with Chrome.
 Although, the database files are opened in read-only mode, so your cookies will not be
 altered if an error occurs.
 
-### Session
+### Aliases
 
-It is possible to use gateau to create a browser session within a new context,
-and output the cookies after the session is finished.
+You can define aliases to make gateau easier to use.
+For example, you can add the following aliases to your shell configuration file:
 
 ```bash
-gateau wrap --browser=firefox --session -- curl https://example.com
+alias curlfire="curl -b <(gateau output --format netscape)"
+alias chrul="curl -b <(gateau output --format netscape --browser chromium)"
+alias wgetfire="wget --load-cookies <(gateau output --format netscape)"
+alias wgetchr="wget --load-cookies <(gateau output --format netscape --browser chromium)"
+alias httpfire="http --session-read-only <(gateau output --format httpie-session)"
+alias httpchr="http --session-read-only <(gateau output --format httpie-session --browser chromium)"
+alias httpsfire="https --session-read-only <(gateau output --format httpie-session)"
+alias httpschr="https --session-read-only <(gateau output --format httpie-session --browser chromium)"
 ```
+
+Please note that this would probably not work as intended
+if you use `curl` with [`-:`](https://curl.se/docs/manpage.html) and multiple URLs,
+as the cookies would be imported for the first request only.
 
 ## Help
 
