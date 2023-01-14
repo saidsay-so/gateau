@@ -8,7 +8,6 @@ pub fn get_connection<P: AsRef<Path>>(
     bypass_lock: bool,
 ) -> color_eyre::Result<Connection> {
     let conn = if bypass_lock {
-        // This can lead to read errors if the browser is still running and writing to the database.
         let db_path = db_path.as_ref().as_os_str();
         let immutable_path_uri = {
             let mut path = OsString::with_capacity(17 + db_path.len());
@@ -18,6 +17,7 @@ pub fn get_connection<P: AsRef<Path>>(
             path
         };
 
+        // This can lead to read errors if the browser is still running and writing to the database.
         Connection::open_with_flags(
             immutable_path_uri,
             OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
@@ -39,7 +39,7 @@ where
 {
     Ok(
         conn.create_scalar_function(name.as_ref(), 1, FunctionFlags::default(), move |ctx| {
-            Ok(predicate(&ctx.get::<String>(0)?))
+            Ok(predicate(&ctx.get::<std::rc::Rc<str>>(0)?))
         })?,
     )
 }

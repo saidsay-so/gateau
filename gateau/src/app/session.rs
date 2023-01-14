@@ -14,7 +14,7 @@ use crate::{app::filter_hosts, utils::sqlite_predicate_builder};
 use super::Browser;
 
 /// Builder for a session.
-/// A session is a temporary browser instance that is used to retrieve cookies.
+/// A session is a temporary browser instance.
 #[derive(Debug, Clone)]
 #[must_use]
 pub(crate) struct SessionBuilder {
@@ -32,6 +32,7 @@ impl<'a> SessionBuilder {
         }
     }
 
+    /// Build a browser session.
     pub fn build(self) -> color_eyre::Result<Session<'a>> {
         let session_context = tempdir()?;
 

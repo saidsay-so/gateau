@@ -1,3 +1,7 @@
+//! macOS-specific functions to get the key used to encrypt cookies in Chrome.
+//! On macOS, cookies are encrypted using the AES 128-bit algorithm and CBC mode,
+//! and the password from which is derived the key used to encrypt the cookie stored in the keyring.
+
 use keyring::{
     credential::{MacCredential, MacKeychainDomain, PlatformCredential},
     Entry,
@@ -57,7 +61,7 @@ fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<V
     Ok(key.hash.unwrap().as_bytes().to_vec())
 }
 
-/// Gets the key used to encrypt cookies in Chrome on macOS.
+/// Gets the key used to encrypt cookies on macOS.
 pub(crate) fn get_v10_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
     let password = get_v10_password(variant)?;
     derive_key_from_password(password)

@@ -67,6 +67,7 @@ impl App {
         Self { args }
     }
 
+    /// Get the cookies matching the provided hosts from the specified browser.
     fn get_cookies(
         cookie_db_path: Option<PathBuf>,
         bypass_lock: bool,

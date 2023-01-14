@@ -1,3 +1,9 @@
+//! Windows-specific functions to get the key used to encrypt cookies in Chrome.
+//! On Windows, cookies are encrypted either:
+//! - with the Windows DPAPI only,
+//! - with a 256-bits key encrypted with DPAPI and stored in the Local State file,
+//! with the AES-256 algorithm and the GCM mode.
+
 use base64ct::{Base64, Encoding};
 use color_eyre::eyre::ensure;
 use windows::Win32::{
@@ -25,7 +31,7 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
     // and https://microsoft.github.io/windows-docs-rs/doc/windows/Win32/Security/Cryptography/fn.CryptUnprotectData.html
     // for more information.
     // We assume that `encrypted_value` is a valid buffer for the duration of the call.
-    // We check that `data_out.pbData` is not null before creating the `Vec` and that `CryptUnprotectData` returns a success code.
+    // We check that `data_out.pbData` is not null before creating a slice and that `CryptUnprotectData` returns a success code.
     unsafe {
         CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).ok()?;
 

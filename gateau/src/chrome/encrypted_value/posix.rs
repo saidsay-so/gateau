@@ -1,4 +1,8 @@
-/// Default password used by Chrome on Linux when no keyring is available.
+//! Unix-specific functions to get the key used to encrypt cookies in Chrome.
+//! On Unix systems, cookies are encrypted using the AES 128-bit algorithm and CBC mode,
+//! and the password from which is derived the key used to encrypt the cookie is "peanuts".
+
+/// Default password used by Chrome on Linux when no keyring is available or on other Unix platforms except macOS.
 const _CHROME_V10_PASSWORD: &str = "peanuts";
 
 /// Default key used by Chrome on Linux when no keyring is available.
