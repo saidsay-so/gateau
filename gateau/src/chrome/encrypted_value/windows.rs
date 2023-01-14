@@ -45,23 +45,18 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
 }
 
 /// Get encrypted key (prefixed with [`DPAPI_PREFIX`]) from `local_state` if it exists.
-pub(crate) fn get_encrypted_key(
-    local_state: &crate::chrome::LocalState,
-) -> color_eyre::Result<Option<String>> {
+pub(crate) fn get_encrypted_key(local_state: &crate::chrome::LocalState) -> Option<String> {
     let os_crypt = local_state
         .values
         .get("os_crypt")
-        .map(|obj| obj.as_object())
-        .ok_or_else(|| color_eyre::eyre::eyre!("'os_crypt' is not an object"))?;
+        .and_then(|obj| obj.as_object());
 
-    let key = os_crypt.and_then(|os_crypt| {
+    os_crypt.and_then(|os_crypt| {
         os_crypt
             .get("encrypted_key")
             .and_then(|s| s.as_str())
             .map(|s| s.to_string())
-    });
-
-    Ok(key)
+    })
 }
 
 /// Decrypts the key encrypted with DPAPI and encoded in Base64.
@@ -98,6 +93,6 @@ mod test {
         }"#,
         );
         let encrypted_key = get_encrypted_key(local_state).unwrap();
-        assert_eq!(encrypted_key, Some(String::from("expected")));
+        assert_eq!(encrypted_key, String::from("expected"));
     }
 }

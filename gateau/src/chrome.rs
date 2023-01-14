@@ -160,7 +160,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     };
 
     let encrypted_value = if key.is_some() {
-        encrypted_value.get(HEADER_LEN..).unwrap()
+        encrypted_value.get(HEADER_LEN..).expect("No data after the header")
     } else {
         encrypted_value
     };
@@ -193,7 +193,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     };
 
     let encrypted_value = if key.is_some() {
-        encrypted_value.get(HEADER_LEN..).unwrap()
+        encrypted_value.get(HEADER_LEN..).expect("No data after the header")
     } else {
         encrypted_value
     };
@@ -224,7 +224,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>, P: AsRef<Path>>(
         Some(b"v10") => Some(KEY_CACHE.get_or_try_init(|| {
             let local_state = get_local_state(local_state.as_ref())?;
 
-            let encrypted_key = windows::get_encrypted_key(&local_state)?.ok_or_else(|| {
+            let encrypted_key = windows::get_encrypted_key(&local_state).ok_or_else(|| {
                 color_eyre::eyre::eyre!("Encrypted key is not available in the local state")
             })?;
             windows::decrypt_dpapi_encrypted_key(encrypted_key)
@@ -233,7 +233,7 @@ fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>, P: AsRef<Path>>(
     };
 
     if let Some(key) = key {
-        encrypted_value::decrypt_value(key, encrypted_value_ref.get(HEADER_LEN..).unwrap())
+        encrypted_value::decrypt_value(key, encrypted_value_ref.get(HEADER_LEN..).expect("No data after the header"))
     } else {
         // Values seems to be always encrypted on Windows, at least with DPAPI
         // if not with AES-256-GCM
@@ -312,7 +312,7 @@ pub(crate) fn get_cookies(
                         OffsetDateTime::from_unix_timestamp_nanos(chrome_to_unix_timestamp_nanos(
                             expires,
                         ))
-                        .unwrap(),
+                        .expect("Invalid date"),
                     ))
                     .secure(secure)
                     .same_site(match same_site {

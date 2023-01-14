@@ -31,10 +31,11 @@ impl PathProvider {
     /// This function panics if no default profile can be found.
     pub(crate) fn default_profile() -> Self {
         let root_dir = if cfg!(any(windows, target_os = "macos")) {
-            dirs_next::config_dir().unwrap()
+            dirs_next::config_dir()
         } else {
-            dirs_next::home_dir().unwrap()
+            dirs_next::home_dir()
         }
+        .unwrap()
         .join(if cfg!(any(windows, target_os = "macos")) {
             "Mozilla/Firefox"
         } else {
