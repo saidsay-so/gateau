@@ -160,7 +160,9 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     };
 
     let encrypted_value = if key.is_some() {
-        encrypted_value.get(HEADER_LEN..).expect("No data after the header")
+        encrypted_value
+            .get(HEADER_LEN..)
+            .expect("No data after the header")
     } else {
         encrypted_value
     };
@@ -193,7 +195,9 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
     };
 
     let encrypted_value = if key.is_some() {
-        encrypted_value.get(HEADER_LEN..).expect("No data after the header")
+        encrypted_value
+            .get(HEADER_LEN..)
+            .expect("No data after the header")
     } else {
         encrypted_value
     };
@@ -233,7 +237,12 @@ fn decrypt_cookie_value<V: AsRef<[u8]> + AsMut<[u8]>, P: AsRef<Path>>(
     };
 
     if let Some(key) = key {
-        encrypted_value::decrypt_value(key, encrypted_value_ref.get(HEADER_LEN..).expect("No data after the header"))
+        encrypted_value::decrypt_value(
+            key,
+            encrypted_value_ref
+                .get(HEADER_LEN..)
+                .expect("No data after the header"),
+        )
     } else {
         // Values seems to be always encrypted on Windows, at least with DPAPI
         // if not with AES-256-GCM
