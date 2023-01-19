@@ -223,14 +223,17 @@ as the cookies would be imported for the first request only.
 
 A simple wrapper to import cookies from browsers for curl, wget and httpie.
 
-Usage: [-c ARG] [-b ARG] [--bypass-lock] COMMAND ...
+Usage: [-c ARG] [--session] --session-urls ARG... [-b ARG] [--bypass-lock] COMMAND ...
 
 Available options:
-    -c, --cookie-db <ARG>  Ccookie database path
-    -b, --browser <ARG>    Browser(s) to import cookies from
-        --bypass-lock      Bypass the lock on the database (can cause read errors)
-    -h, --help             Prints help information
-    -V, --version          Prints version information
+    -c, --cookie-db <ARG>     Ccookie database path
+        --session             Open the browser in a new context and output the saved cookies when it closes
+        --session-urls <ARG>  URLs to open in the session
+    -b, --browser <ARG>       Browser(s) to import cookies from
+                              Supported browsers: chrome, chromium, firefox
+        --bypass-lock         Bypass the lock on the database (can cause read errors)
+    -h, --help                Prints help information
+    -V, --version             Prints version information
 
 Available commands:
     output  Output cookies to stdout in the specified format
@@ -240,17 +243,15 @@ Available commands:
 
 Output cookies to stdout in the specified format
 
-Usage: [--format ARG] [--session] --session-urls ARG... <HOSTS>...
+Usage: [--format ARG] <HOSTS>...
 
 Available positional items:
     <HOSTS>  Hosts to filter cookies by
 
 Available options:
-        --format <ARG>        Output format
-                              Supported formats: netscape, httpie-session
-        --session             Open the browser in a new context and output the saved cookies when it closes
-        --session-urls <ARG>  URL to open in the session
-    -h, --help                Prints help information
+        --format <ARG>  Output format
+                        Supported formats: netscape, httpie-session
+    -h, --help          Prints help information
 
 > gateau wrap --help
 
@@ -261,7 +262,7 @@ Usage: <COMMAND> <ARGS>...
 Available positional items:
     <COMMAND>  Command which should be wrapped
                Supported commands: curl, wget, http, https
-    <ARGS>      Arguments for the wrapped command
+    <ARGS>     Arguments for the wrapped command
 
 Available options:
     -h, --help  Prints help information
@@ -292,7 +293,7 @@ Benchmark 3: curl localhost:8000
 Summary
   'curl localhost:8000' ran
     1.15 ± 0.54 times faster than 'curl -b <(gateau --bypass-lock output) localhost:8000'
-    1.50 ± 0.62 times faster than 'gateau wrap --bypass-lock curl localhost:8000'```
+    1.50 ± 0.62 times faster than 'gateau wrap --bypass-lock curl localhost:8000'
 ```
 
 > The benchmarks were done with [hyperfine](https://github.com/sharkdp/hyperfine),
