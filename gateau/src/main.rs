@@ -71,14 +71,6 @@ enum Mode {
         /// Supported formats: netscape, httpie-session
         format: Option<OutputFormat>,
 
-        /// Open the browser in a new context and output the saved cookies when it closes
-        #[bpaf(long)]
-        session: bool,
-
-        /// URL to open in the session
-        #[bpaf(long)]
-        session_urls: Vec<Uri>,
-
         /// Hosts to filter cookies by
         #[bpaf(positional("HOSTS"), many)]
         hosts: Vec<Uri>,
@@ -106,6 +98,14 @@ struct Args {
     /// Ccookie database path
     #[bpaf(short, long)]
     cookie_db: Option<PathBuf>,
+
+    /// Open the browser in a new context and output the saved cookies when it closes
+    #[bpaf(long)]
+    session: bool,
+
+    /// URLs to open in the session
+    #[bpaf(long)]
+    session_urls: Vec<Uri>,
 
     /// Browser(s) to import cookies from
     ///

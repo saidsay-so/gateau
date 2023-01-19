@@ -150,14 +150,11 @@ impl App {
 
     pub fn run(self) -> Result<Option<i32>> {
         let browser = self.args.browser.unwrap_or(Browser::Firefox);
+        let session = self.args.session;
+        let session_urls = self.args.session_urls;
 
         match self.args.mode {
-            crate::Mode::Output {
-                format,
-                hosts,
-                session,
-                session_urls,
-            } => {
+            crate::Mode::Output { format, hosts } => {
                 let cookies = if session {
                     let session = SessionBuilder::new(browser, session_urls, hosts).build()?;
                     session.cookies().to_vec()
@@ -201,12 +198,17 @@ impl App {
                     }
                 };
 
-                let cookies = App::get_cookies(
-                    self.args.cookie_db,
-                    self.args.bypass_lock,
-                    browser,
-                    Vec::new(),
-                )?;
+                let cookies = if session {
+                    let session = SessionBuilder::new(browser, session_urls, Vec::new()).build()?;
+                    session.cookies().to_vec()
+                } else {
+                    App::get_cookies(
+                        self.args.cookie_db,
+                        self.args.bypass_lock,
+                        browser,
+                        Vec::new(),
+                    )?
+                };
 
                 let capacity = (64 * cookies.len()).next_power_of_two();
                 let mut cookies_buf = Vec::with_capacity(capacity);
