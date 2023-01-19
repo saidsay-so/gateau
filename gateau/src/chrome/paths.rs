@@ -7,7 +7,7 @@ use std::{
 
 pub(crate) struct PathProvider {
     _base_dir: PathBuf,
-    _profile: Option<OsString>,
+    _profile: OsString,
     profile_dir: PathBuf,
 }
 
@@ -16,18 +16,18 @@ impl PathProvider {
     /// If no profile is given, the root dir is used as the profile dir.
     pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
+        let profile = profile
+            .as_ref()
+            .map(|p| p.as_ref())
+            .unwrap_or_else(|| OsStr::new("Default"));
 
         Self {
-            profile_dir: if let Some(profile) = profile.as_ref().map(|p| p.as_ref()) {
-                if cfg!(windows) {
-                    base_dir.join("User Data").join(profile)
-                } else {
-                    base_dir.join(profile)
-                }
+            profile_dir: if cfg!(windows) {
+                base_dir.join("User Data").join(profile)
             } else {
-                base_dir.clone()
+                base_dir.join(profile)
             },
-            _profile: profile.map(|p| p.as_ref().into()),
+            _profile: profile.to_owned(),
             _base_dir: base_dir,
         }
     }
