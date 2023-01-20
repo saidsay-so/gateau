@@ -2,7 +2,7 @@ name: Build and release binaries
 
 on:
   release:
-    types: [published]
+    types: [created, published, released]
 
 jobs:
   release:
