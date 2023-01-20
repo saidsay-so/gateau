@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "gateau"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "aes 0.8.2",
  "aes-gcm",
