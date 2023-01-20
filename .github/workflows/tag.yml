@@ -12,6 +12,8 @@ jobs:
   changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
+    outputs:
+      body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,14 +26,16 @@ jobs:
         with:
           config: cliff.toml
           args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
 
   release:
     name: Create release
+    needs: changelog
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Release
         uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ needs.changelog.outputs.body }}
