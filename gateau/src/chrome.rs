@@ -159,16 +159,13 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
         _ => None,
     };
 
-    let encrypted_value = if key.is_some() {
-        encrypted_value
-            .get(HEADER_LEN..)
-            .expect("No data after the header")
-    } else {
-        encrypted_value
-    };
-
     if let Some(key) = key {
-        encrypted_value::decrypt_value(key, encrypted_value)
+        encrypted_value::decrypt_value(
+            key,
+            encrypted_value
+                .get(HEADER_LEN..)
+                .expect("No data after the header"),
+        )
     } else {
         // We assume that it's not encrypted
         String::from_utf8(encrypted_value.into())
@@ -194,16 +191,13 @@ fn decrypt_cookie_value<V: AsRef<[u8]>>(
         _ => None,
     };
 
-    let encrypted_value = if key.is_some() {
-        encrypted_value
-            .get(HEADER_LEN..)
-            .expect("No data after the header")
-    } else {
-        encrypted_value
-    };
-
     if let Some(key) = key {
-        encrypted_value::decrypt_value(key, encrypted_value)
+        encrypted_value::decrypt_value(
+            key,
+            encrypted_value
+                .get(HEADER_LEN..)
+                .expect("No data after the header"),
+        )
     } else {
         // We assume that it's not encrypted
         String::from_utf8(encrypted_value.into())

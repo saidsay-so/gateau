@@ -33,7 +33,7 @@ use serde::Serialize;
 /// ## Panics
 ///
 /// Panics if one the cookie's optional parameters is `None` or the expiration date is not a date.
-pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Result<()> {
+pub fn netscape<W: Write>(cookies: &[Cookie<'_>], writer: &mut W) -> io::Result<()> {
     const NETSCAPE_HEADER: &[u8] = b"# Netscape HTTP Cookie File\n";
 
     const fn bool_to_uppercase(b: bool) -> &'static str {
@@ -68,7 +68,7 @@ pub fn netscape<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::
 }
 
 #[cfg(feature = "human")]
-pub fn human<'a, W: Write>(cookies: &'a [Cookie<'a>], writer: &mut W) -> io::Result<()> {
+pub fn human<W: Write>(cookies: &[Cookie<'_>], writer: &mut W) -> io::Result<()> {
     use color_eyre::owo_colors::OwoColorize;
     use cookie::time::format_description;
     use itertools::Itertools;
@@ -205,7 +205,7 @@ struct RawHttpieSession {
 ///
 /// Panics if one the cookie's optional parameters is `None` or the expiration date is not a date.
 pub(crate) fn httpie_session<'a, W: Write>(
-    cookies: &'a [Cookie<'a>],
+    cookies: &[Cookie<'_>],
     writer: &mut W,
 ) -> io::Result<()> {
     let cookies = cookies

@@ -3,7 +3,7 @@
 //! and the password from which is derived the key used to encrypt the cookie is "peanuts".
 
 /// Default password used by Chrome on Linux when no keyring is available or on other Unix platforms except macOS.
-const _CHROME_V10_PASSWORD: &str = "peanuts";
+pub const _CHROME_V10_PASSWORD: &str = "peanuts";
 
 /// Default key used by Chrome on Linux when no keyring is available.
 /// This is the result of deriving the key from the default ("peanuts") password (see notebook).
