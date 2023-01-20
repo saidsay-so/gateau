@@ -11,6 +11,8 @@ use windows::Win32::{
     System::Memory::LocalFree,
 };
 
+use crate::chrome::LocalState;
+
 /// Decrypts a value encrypted with the Windows DPAPI.
 ///
 /// # Safety
@@ -45,7 +47,7 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
 }
 
 /// Get encrypted key (prefixed with [`DPAPI_PREFIX`]) from `local_state` if it exists.
-pub(crate) fn get_encrypted_key(local_state: &crate::chrome::LocalState) -> Option<String> {
+pub(crate) fn get_encrypted_key(local_state: &LocalState) -> Option<String> {
     let os_crypt = local_state
         .values
         .get("os_crypt")
@@ -84,15 +86,16 @@ mod test {
 
     #[test]
     fn test_get_encrypted_key() {
-        let local_state = Cursor::new(
+        let local_state = serde_json::from_str(
             r#"{
             "os_crypt": {
                 "encrypted_key": "expected",
                 "ee": "unexpected"
             }
         }"#,
-        );
-        let encrypted_key = get_encrypted_key(local_state).unwrap();
+        )
+        .unwrap();
+        let encrypted_key = get_encrypted_key(&local_state).unwrap();
         assert_eq!(encrypted_key, String::from("expected"));
     }
 }
