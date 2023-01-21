@@ -1,9 +1,12 @@
 [workspace]
 members = ["gateau"]
 
+[profile.release-opt]
+inherits = "release"
+strip = true
+panic = "abort"
+
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
-strip = true
-panic = "abort"
