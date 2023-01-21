@@ -66,7 +66,7 @@ jobs:
 
       - name: Install musl-tools
         if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: apt-get install musl-tools
+        run: sudo apt-get install musl-tools
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -81,7 +81,7 @@ jobs:
         with:
           type: ${{ matrix.archive.type }}
           filename: gateau.${{ matrix.target }}.${{ matrix.archive.output }}
-          path: target/release/${{ matrix.target }}/${{ matrix.output }} README.md LICENSE
+          path: target/${{ matrix.target }}/release-opt/${{ matrix.output }} README.md LICENSE
 
       - name: Upload to release
         uses: softprops/action-gh-release@v1
