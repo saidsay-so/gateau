@@ -52,6 +52,7 @@ fn get_chrome_v11_password(variant: ChromeVariant) -> color_eyre::Result<String>
     let variant = match variant {
         ChromeVariant::Chromium => "chromium",
         ChromeVariant::Chrome => "chrome",
+        ChromeVariant::Edge => "edge",
     };
     let credential = PlatformCredential::Linux(LinuxCredential {
         collection: String::from("default"),

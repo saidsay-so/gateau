@@ -111,6 +111,7 @@ struct ChromeCookie {
 pub enum ChromeVariant {
     Chromium,
     Chrome,
+    Edge,
 }
 
 // Offset of UNIX epoch (1970-01-01 00:00:00 UTC) from Windows FILETIME epoch

@@ -42,9 +42,9 @@ impl PathProvider {
         .unwrap()
         .join(PathProvider::variant_base_folder(variant));
 
-        let default = "Default";
+        const DEFAULT_PROFILE: &str = "Default";
 
-        Self::new(root_dir, Some(default))
+        Self::new(root_dir, Some(DEFAULT_PROFILE))
     }
 
     /// Returns the subpath of the base directory which changes depending on the variant.
@@ -53,11 +53,13 @@ impl PathProvider {
             match variant {
                 ChromeVariant::Chromium => "Chromium",
                 ChromeVariant::Chrome => "Google/Chrome",
+                ChromeVariant::Edge => "Microsoft/Edge",
             }
         } else {
             match variant {
                 ChromeVariant::Chromium => "chromium",
                 ChromeVariant::Chrome => "google-chrome",
+                ChromeVariant::Edge => "microsoft-edge",
             }
         }
     }
@@ -70,6 +72,14 @@ impl PathProvider {
 
     /// Returns the path to the cookies database.
     pub(crate) fn cookies_database(&self) -> PathBuf {
-        self.profile_dir.join("Cookies")
+        // The cookies database is stored in a subfolder called "Network" in newer versions of
+        // Chromium (on Windows it seems). If this folder does not exist, we fall back to the old location.
+        let new_path = self.profile_dir.join("Network").join("Cookies");
+
+        if new_path.exists() {
+            new_path
+        } else {
+            self.profile_dir.join("Cookies")
+        }
     }
 }
