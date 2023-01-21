@@ -76,12 +76,16 @@ jobs:
       - name: Compile
         run: cargo build --verbose --locked --profile=release-opt --target=${{ matrix.target }} --features=bundled
 
+      - name: Move binary
+        shell: bash
+        run: mv target/${{ matrix.target }}/release-opt/${{ matrix.output }} ${{ matrix.output }}
+
       - name: Create archive
         uses: thedoctor0/zip-release@0.7.0
         with:
           type: ${{ matrix.archive.type }}
           filename: gateau.${{ matrix.target }}.${{ matrix.archive.output }}
-          path: target/${{ matrix.target }}/release-opt/${{ matrix.output }} README.md LICENSE
+          path: ${{ matrix.output }} README.md LICENSE
 
       - name: Upload to release
         uses: softprops/action-gh-release@v1
