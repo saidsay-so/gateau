@@ -18,7 +18,7 @@ jobs:
           - os: ubuntu-latest
             features: human,bundled
           - os: macos-latest 
-            features: human
+            features: human,bundled
 
     runs-on: ${{ matrix.os }}
 

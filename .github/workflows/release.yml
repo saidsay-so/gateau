@@ -1,30 +1,87 @@
-name: Build and release binaries
+name: Generate changelog and create release
 
 on:
-  release:
-    types: [created, published, released]
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  release:
-    name: Release ${{ matrix.target }}
+  changelog:
+    name: Generate changelog and create release
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v2
+        id: git-cliff
+        with:
+          config: cliff.toml
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.git-cliff.outputs.content }}
+
+  release:
+    name: Build binaries and upload to release
+    needs: changelog
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - ubuntu-latest
+        output:
+          - gateau
+        archive:
+          - { type: tar, output: tar.gz }
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
         include:
-          - target: x86_64-pc-windows-gnu
-            archive: zip
-          - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
-          - target: x86_64-apple-darwin
-            archive: zip
+          - os: windows-latest
+            output:
+              - gateau.exe
+            target:
+              - x86_64-pc-windows-msvc
+              - x86_64-pc-windows-gnu
+            archive:
+              - { type: zip, output: zip }
+          - os: macos-latest
+            output:
+              - gateau.dmg
+            target:
+              - x86_64-apple-darwin
+            archive:
+              - { type: tar, output: tar.gz }
+
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@master
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          ARCHIVE_TYPES: ${{ matrix.archive }}
-          EXTRA_FILES: "README.md CHANGELOG.md LICENSE"
+          target: ${{ matrix.target }}
+
+      - name: Compile
+        run: cargo build --release --target=${{ matrix.target }} --features=bundled
+
+      - name: Create archive
+        uses: thedoctor0/zip-release@0.7.0
+        with:
+          type: ${{ matrix.archive.type }}
+          filename: gateau.${{ matrix.target }}.${{ matrix.archive.output }}
+          path: target/release/${{ matrix.output }} README.md CHANGELOG.md LICENSE
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: gateau.${{ matrix.target }}.${{ matrix.archive.output }}
