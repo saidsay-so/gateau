@@ -25,6 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --verbose --features=${{ matrix.features }}
+        run: cargo build --verbose --locked --features=${{ matrix.features }}
       - name: Run tests
-        run: cargo test --verbose --features=${{ matrix.features }}
+        run: cargo test --verbose --locked --features=${{ matrix.features }}

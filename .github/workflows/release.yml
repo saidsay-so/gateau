@@ -72,7 +72,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Compile
-        run: cargo build --verbose --profile=release-opt --target=${{ matrix.target }} --features=bundled
+        run: cargo build --verbose --locked --profile=release-opt --target=${{ matrix.target }} --features=bundled
 
       - name: Create archive
         uses: thedoctor0/zip-release@0.7.0
