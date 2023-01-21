@@ -35,36 +35,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-        output:
-          - gateau
-        archive:
-          - { type: tar, output: tar.gz }
-        target:
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
         include:
+          - os: ubuntu-latest
+            output: gateau
+            archive: { type: tar, output: tar.gz }
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            output: gateau
+            archive: { type: tar, output: tar.gz }
+            target: x86_64-unknown-linux-musl
+
           - os: windows-latest
-            output:
-              - gateau.exe
-            target:
-              - x86_64-pc-windows-msvc
-              - x86_64-pc-windows-gnu
-            archive:
-              - { type: zip, output: zip }
+            output: gateau.exe
+            target: x86_64-pc-windows-msvc
+            archive: { type: zip, output: zip }
+          - os: windows-latest
+            output: gateau.exe
+            target: x86_64-pc-windows-gnu
+            archive: { type: zip, output: zip }
+
           - os: macos-latest
-            output:
-              - gateau
-            target:
-              - x86_64-apple-darwin
-            archive:
-              - { type: tar, output: tar.gz }
+            output: gateau
+            target: x86_64-apple-darwin
+            archive: { type: tar, output: tar.gz }
 
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Install musl-tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: apt-get install musl-tools
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -79,7 +81,7 @@ jobs:
         with:
           type: ${{ matrix.archive.type }}
           filename: gateau.${{ matrix.target }}.${{ matrix.archive.output }}
-          path: target/release/${{ matrix.output }} README.md CHANGELOG.md LICENSE
+          path: target/release/${{ matrix.target }}/${{ matrix.output }} README.md LICENSE
 
       - name: Upload to release
         uses: softprops/action-gh-release@v1
