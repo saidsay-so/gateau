@@ -23,10 +23,18 @@ See [httpie sessions](#httpie-sessions) for more information.
 gateau supports all platforms supported by the browsers and the Rust toolchain,
 including Linux, macOS and Windows.
 
+### SQLite dependency
+
+Please note that if you download one of the pre-built releases,
+SQLite will be bundled with the executable and gateau will not require SQLite to be installed.
+If you want to use the system's SQLite instead, you will have to build gateau from source.
+
 ### From source
 
 ```bash
-cargo install --git github.com/musikid/gateau
+# You can remove the `--feautures=bundled` flag if you have SQLite installed
+# on your system and want to use the system's SQLite instead of the bundled one.
+cargo install --git github.com/musikid/gateau --features=bundled
 ```
 
 ### From binaries
