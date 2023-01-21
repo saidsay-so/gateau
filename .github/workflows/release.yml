@@ -55,7 +55,7 @@ jobs:
               - { type: zip, output: zip }
           - os: macos-latest
             output:
-              - gateau.dmg
+              - gateau
             target:
               - x86_64-apple-darwin
             archive:
