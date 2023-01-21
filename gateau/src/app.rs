@@ -29,16 +29,16 @@ mod session;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Browser {
     Firefox,
-    Chromium,
-    Chrome,
+    ChromeVariant(ChromeVariant),
 }
 
 impl std::fmt::Display for Browser {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Browser::Firefox => write!(f, "Firefox"),
-            Browser::Chromium => write!(f, "Chromium"),
-            Browser::Chrome => write!(f, "Google Chrome"),
+            Browser::ChromeVariant(ChromeVariant::Chromium) => write!(f, "Chromium"),
+            Browser::ChromeVariant(ChromeVariant::Chrome) => write!(f, "Google Chrome"),
+            Browser::ChromeVariant(ChromeVariant::Edge) => write!(f, "Microsoft Edge"),
         }
     }
 }
@@ -49,8 +49,9 @@ impl FromStr for Browser {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "firefox" => Ok(Browser::Firefox),
-            "chromium" => Ok(Browser::Chromium),
-            "chrome" => Ok(Browser::Chrome),
+            "chromium" => Ok(Browser::ChromeVariant(ChromeVariant::Chromium)),
+            "chrome" => Ok(Browser::ChromeVariant(ChromeVariant::Chrome)),
+            "edge" => Ok(Browser::ChromeVariant(ChromeVariant::Edge)),
             _ => Err(format!(
                 "'{s}' is not one of the supported browsers (firefox, chromium, chrome)"
             )),
@@ -92,13 +93,7 @@ impl App {
                 firefox::get_cookies(&conn)
             }
 
-            Browser::Chrome | Browser::Chromium => {
-                let chrome_variant = match browser {
-                    Browser::Chrome => ChromeVariant::Chrome,
-                    Browser::Chromium => ChromeVariant::Chromium,
-                    _ => unreachable!(),
-                };
-
+            Browser::ChromeVariant(chrome_variant) => {
                 let path_provider = chrome::paths::PathProvider::default_profile(chrome_variant);
 
                 let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());

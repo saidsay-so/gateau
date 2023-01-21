@@ -9,7 +9,7 @@ use cookie::Cookie;
 use http::Uri;
 use tempfile::tempdir;
 
-use crate::{app::filter_hosts, utils::sqlite_predicate_builder};
+use crate::{app::filter_hosts, chrome::ChromeVariant, utils::sqlite_predicate_builder};
 
 use super::Browser;
 
@@ -76,13 +76,13 @@ impl<'a> SessionBuilder {
                 Ok(Session { cookies })
             }
 
-            Browser::Chrome | Browser::Chromium => {
+            Browser::ChromeVariant(chrome_variant) => {
                 const CHROMIUM_USER_DATA_DIR_FLAG: &str = "--user-data-dir=";
 
-                let cmd = match self.browser {
-                    Browser::Chrome => "google-chrome",
-                    Browser::Chromium => "chromium",
-                    _ => unreachable!(),
+                let cmd = match chrome_variant {
+                    ChromeVariant::Chrome => "google-chrome",
+                    ChromeVariant::Chromium => "chromium",
+                    ChromeVariant::Edge => "edge",
                 };
 
                 let user_data_arg = {
@@ -104,12 +104,6 @@ impl<'a> SessionBuilder {
                     .wrap_err_with(|| format!("Failed to run {cmd}"))?;
 
                 child.wait()?;
-
-                let chrome_variant = match self.browser {
-                    Browser::Chrome => crate::chrome::ChromeVariant::Chrome,
-                    Browser::Chromium => crate::chrome::ChromeVariant::Chromium,
-                    _ => unreachable!(),
-                };
 
                 let path_provider = crate::chrome::paths::PathProvider::new::<_, OsString>(
                     session_context.path(),

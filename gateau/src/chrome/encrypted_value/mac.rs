@@ -29,6 +29,7 @@ pub(crate) fn get_v10_password(variant: ChromeVariant) -> color_eyre::Result<Str
     let (service, account) = match variant {
         ChromeVariant::Chromium => ("Chromium Safe Storage", "Chromium"),
         ChromeVariant::Chrome => ("Chrome Safe Storage", "Chrome"),
+        ChromeVariant::Edge => ("Edge Safe Storage", "Edge"),
     };
 
     let credential = PlatformCredential::Mac(MacCredential {
