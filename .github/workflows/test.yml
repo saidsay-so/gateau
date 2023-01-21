@@ -12,19 +12,16 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - os: windows-latest
-            features: human,bundled
-          - os: ubuntu-latest
-            features: human,bundled
-          - os: macos-latest 
-            features: human,bundled
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --verbose --locked --features=${{ matrix.features }}
+        run: cargo build --verbose --locked --all-features
       - name: Run tests
-        run: cargo test --verbose --locked --features=${{ matrix.features }}
+        run: cargo test --verbose --locked --all-features
