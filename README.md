@@ -49,6 +49,7 @@ It imports cookies from Firefox by default if the `--browser` flag is not specif
 
 - Google Chrome
 - Chromium
+- Microsoft Edge
 - Firefox
 
 Note: Since almost all other browsers are Chrome derivatives, it should be straightforward to
@@ -230,7 +231,7 @@ Available options:
         --session             Open the browser in a new context and output the saved cookies when it closes
         --session-urls <ARG>  URLs to open in the session
     -b, --browser <ARG>       Browser(s) to import cookies from
-                              Supported browsers: chrome, chromium, firefox
+                              Supported browsers: chrome, chromium, firefox, edge
         --bypass-lock         Bypass the lock on the database (can cause read errors)
     -h, --help                Prints help information
     -V, --version             Prints version information

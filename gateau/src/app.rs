@@ -53,7 +53,7 @@ impl FromStr for Browser {
             "chrome" => Ok(Browser::ChromeVariant(ChromeVariant::Chrome)),
             "edge" => Ok(Browser::ChromeVariant(ChromeVariant::Edge)),
             _ => Err(format!(
-                "'{s}' is not one of the supported browsers (firefox, chromium, chrome)"
+                "'{s}' is not one of the supported browsers (firefox, chromium, chrome, edge)"
             )),
         }
     }

@@ -109,7 +109,7 @@ struct Args {
 
     /// Browser(s) to import cookies from
     ///
-    /// Supported browsers: chrome, chromium, firefox
+    /// Supported browsers: chrome, chromium, firefox, edge
     #[bpaf(short, long)]
     browser: Option<Browser>,
 
