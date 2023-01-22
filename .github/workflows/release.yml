@@ -66,6 +66,7 @@ jobs:
 
       - name: Create archive
         id: archive
+        shell: bash
         run: |
           ARCHIVE_PATH=$(cargo xtask dist README.md LICENSE)
           [[ $? == 0 ]] || exit 1
