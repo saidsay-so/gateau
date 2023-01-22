@@ -50,4 +50,5 @@ ignore_tags = ""
 topo_order = false
 
 sort_commits = "oldest"
-limit_commits = 50
+# https://github.com/orhun/git-cliff/pull/140
+# limit_commits = 50
