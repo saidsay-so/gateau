@@ -30,13 +30,14 @@ filter_unconventional = true
 split_commits = false
 
 commit_parsers = [
-    { message = "^feat", group = "Features" },
-    { message = "^fix", group = "Bug Fixes" },
-    { message = "^doc", group = "Documentation" },
-    { message = "^perf", group = "Performance" },
-    { message = "^refactor", group = "Refactor" },
-    { message = "^chore\\(release\\):", skip = true },
-    { body = ".*security", group = "Security" },
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^doc", group = "Documentation" },
+  { message = "^docs\\(changelog\\):", skip = true },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactor" },
+  { message = "^chore\\(release\\):", skip = true },
+  { body = ".*security", group = "Security" },
 ]
 
 protect_breaking_commits = true
