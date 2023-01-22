@@ -1,6 +1,6 @@
 use std::{
-    ffi::{OsStr, OsString},
-    fs::{copy, create_dir, remove_dir_all, rename},
+    ffi::OsString,
+    fs::{copy, create_dir_all, remove_dir_all},
     path::PathBuf,
 };
 
@@ -152,6 +152,7 @@ fn dist_subcommand(
         c_build = c_build.args(["--features", &features.join(",")]);
     }
 
+    eprintln!("$ {}", c_build);
     let output = c_build.read()?;
     let mut messages = Message::parse_stream(output.as_bytes());
 
@@ -178,26 +179,31 @@ fn dist_subcommand(
     archive_name.push(format!(".{}", target));
     archive_name.push(format!(".{}", format));
 
-    let archive_dir = target_path.join("dist");
+    let parent_dir = target_path.join("dist");
+    let base_archive_dir = parent_dir.join(BIN_NAME);
 
-    remove_dir_all(&archive_dir).or_else(|err| match err {
+    remove_dir_all(&parent_dir).or_else(|err| match err {
         e if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
         _ => Err(err),
     })?;
-    create_dir(&archive_dir)?;
-    copy(bin_path, archive_dir.join(BIN_NAME))?;
+    create_dir_all(&base_archive_dir)?;
+    copy(bin_path, base_archive_dir.join(BIN_NAME))?;
     for file in files.iter() {
         copy(
             file,
-            archive_dir.as_std_path().join(file.file_name().unwrap()),
+            base_archive_dir
+                .as_std_path()
+                .join(file.file_name().unwrap()),
         )?;
     }
 
     let archive_path = target_path.as_std_path().join(&archive_name);
 
+    sh.change_dir(parent_dir.as_std_path());
+
     match format {
-        ArchiveFormat::TarGz => cmd!(sh, "tar czf {archive_path} -C {archive_dir} ."),
-        ArchiveFormat::Zip => cmd!(sh, "7z a {archive_path} {archive_dir}'/*'"),
+        ArchiveFormat::TarGz => cmd!(sh, "tar czf {archive_path} -C {parent_dir} {BIN_NAME}"),
+        ArchiveFormat::Zip => cmd!(sh, "7z a {archive_path} {base_archive_dir}'/*'"),
     }
     .ignore_stdout()
     .run()?;
