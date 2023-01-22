@@ -1,6 +1,7 @@
 use std::{
     ffi::OsString,
     fs::{copy, create_dir_all, remove_dir_all},
+    io::{stderr, Write},
     path::PathBuf,
 };
 
@@ -197,16 +198,22 @@ fn dist_subcommand(
         )?;
     }
 
-    let archive_path = target_path.as_std_path().join(&archive_name);
+    let archive_path = parent_dir.as_std_path().join(&archive_name);
 
     sh.change_dir(parent_dir.as_std_path());
 
-    match format {
-        ArchiveFormat::TarGz => cmd!(sh, "tar czf {archive_path} -C {parent_dir} {BIN_NAME}"),
+    let output = match format {
+        ArchiveFormat::TarGz => cmd!(sh, "tar czvf {archive_path} -C {parent_dir} {BIN_NAME}"),
         ArchiveFormat::Zip => cmd!(sh, "7z a {archive_path} {base_archive_dir}'/*'"),
     }
-    .ignore_stdout()
-    .run()?;
+    .output()?;
+
+    stderr().lock().write_all(&output.stderr)?;
+    stderr().lock().write_all(&output.stdout)?;
+
+    if !output.status.success() {
+        return Err(color_eyre::eyre::eyre!("Failed to create archive"));
+    }
 
     println!("{}", archive_path.display());
 
