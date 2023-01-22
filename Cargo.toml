@@ -1,5 +1,5 @@
 [workspace]
-members = ["gateau"]
+members = ["gateau", "xtask"]
 
 [profile.release-opt]
 inherits = "release"
