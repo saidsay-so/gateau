@@ -22,7 +22,7 @@ jobs:
         id: git-cliff
         with:
           config: cliff/complete.toml
-          args: -vvv --latest
+          args: -vvv
         env:
           OUTPUT: CHANGELOG.md
 
