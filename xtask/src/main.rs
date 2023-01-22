@@ -180,7 +180,10 @@ fn dist_subcommand(
 
     let archive_dir = target_path.join("dist");
 
-    remove_dir_all(&archive_dir)?;
+    remove_dir_all(&archive_dir).or_else(|err| match err {
+        e if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        _ => Err(err),
+    })?;
     create_dir(&archive_dir)?;
     copy(bin_path, archive_dir.join(BIN_NAME))?;
     for file in files.iter() {
