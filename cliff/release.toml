@@ -1,0 +1,53 @@
+# configuration file for git-cliff
+# see https://github.com/orhun/git-cliff#configuration-file
+
+[changelog]
+header = "# Changes\n\n"
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}]\
+      (https://github.com/musikid/gateau/releases/tag/{{ version }}) \
+      - {{ timestamp | date(format="%Y-%m-%d") }}
+
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }} \
+          ([{{ commit.id | truncate(length=6, end="") }}]\
+            (https://github.com/musikid/gateau/tree/{{ commit.id }}))\
+    {% endfor %}
+{% endfor %}\n
+
+{% endif %}\
+"""
+# remove the leading and trailing whitespace from the template
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+
+split_commits = false
+
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^doc", group = "Documentation" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Refactor" },
+    { message = "^chore\\(release\\):", skip = true },
+    { body = ".*security", group = "Security" },
+]
+
+protect_breaking_commits = true
+
+filter_commits = true
+
+tag_pattern = "v[0-9]*"
+skip_tags = "v0.1.0-beta.1"
+ignore_tags = ""
+
+topo_order = false
+
+sort_commits = "oldest"
+limit_commits = 50
