@@ -14,7 +14,7 @@ body = """
     {% for commit in commits %}
         - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }} \
           ([{{ commit.id | truncate(length=6, end="") }}]\
-            (https://github.com/musikid/gateau/tree/{{ commit.id }}))\
+            (https://github.com/musikid/gateau/commit/{{ commit.id }}))\
     {% endfor %}
 {% endfor %}\n
 
