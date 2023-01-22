@@ -68,7 +68,7 @@ jobs:
         id: archive
         shell: bash
         run: |
-          ARCHIVE_PATH=$(cargo xtask dist README.md LICENSE)
+          ARCHIVE_PATH=$(cargo xtask dist --profile=release-opt --features=bundled README.md LICENSE)
           [[ $? == 0 ]] || exit 1
           echo "path=$ARCHIVE_PATH" >> $GITHUB_OUTPUT
 
