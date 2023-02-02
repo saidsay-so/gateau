@@ -3,9 +3,17 @@
 
 ## [unreleased]
 
+### Bug Fixes
+
+- Improve error message when decrypting value from Chrome on Unix ([ae1a72](https://github.com/musikid/gateau/commit/ae1a72156f7567d57f2a9d26bbf9072658480e20))
+
 ### Miscellaneous Tasks
 
 - Reverse parser order ([519d01](https://github.com/musikid/gateau/commit/519d01d9ae7c0429b63c89468b5506c9bef7d19d))
+
+### Build
+
+- Improve xtask ([5f4b5f](https://github.com/musikid/gateau/commit/5f4b5ff053f7f38a8361ca38abe5562f55f33d66))
 
 ## [0.2.0](https://github.com/musikid/gateau/releases/tag/v0.2.0) - 2023-01-22
 
