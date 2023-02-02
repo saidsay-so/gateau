@@ -18,6 +18,7 @@ pub(crate) fn decrypt_value<K: AsRef<[u8]>, V: AsRef<[u8]>>(
     encrypted_value: V,
 ) -> color_eyre::Result<String> {
     use aes::cipher::{block_padding::Pkcs7, BlockDecryptMut, KeyIvInit};
+    use color_eyre::eyre::Context;
 
     /// Size of initialization vector for AES 128-bit blocks.
     const IVBLOCK_SIZE_AES128: usize = 16;
@@ -30,7 +31,8 @@ pub(crate) fn decrypt_value<K: AsRef<[u8]>, V: AsRef<[u8]>>(
     let mut output_buffer = vec![0u8; encrypted_value.as_ref().len()];
 
     let value = Aes128CbcDec::new(key.as_ref().into(), &IV.into())
-        .decrypt_padded_b2b_mut::<Pkcs7>(encrypted_value.as_ref(), output_buffer.as_mut())?;
+        .decrypt_padded_b2b_mut::<Pkcs7>(encrypted_value.as_ref(), output_buffer.as_mut())
+        .wrap_err("Failed to decrypt cookie value, invalid input")?;
 
     Ok(String::from_utf8(value.into())?)
 }
