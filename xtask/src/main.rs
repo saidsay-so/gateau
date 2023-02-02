@@ -78,7 +78,7 @@ enum Subcommand {
 
         /// Archive name
         ///
-        /// If not provided, the name of the current directory will be used.
+        /// If not provided, it will have the form gateau.target.format
         #[bpaf(short, long)]
         name: Option<OsString>,
 

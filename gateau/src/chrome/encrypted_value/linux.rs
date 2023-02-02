@@ -48,7 +48,7 @@ fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<V
 
 /// Gets the password used to encrypt cookies in Chrome on Linux using the
 /// the secret service API.
-fn get_chrome_v11_password(variant: ChromeVariant) -> color_eyre::Result<String> {
+fn get_v11_password(variant: ChromeVariant) -> color_eyre::Result<String> {
     let variant = match variant {
         ChromeVariant::Chromium => "chromium",
         ChromeVariant::Chrome => "chrome",
@@ -67,6 +67,6 @@ fn get_chrome_v11_password(variant: ChromeVariant) -> color_eyre::Result<String>
 /// Gets the key used to encrypt cookies in Chrome on Linux by deriving it from
 /// the password retrieved with the secret service API.
 pub(crate) fn get_v11_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
-    let password = get_chrome_v11_password(variant)?;
+    let password = get_v11_password(variant)?;
     derive_key_from_password(password)
 }
