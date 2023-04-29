@@ -14,7 +14,7 @@ pub const CHROME_V10_KEY: [u8; 16] = [
 
 #[cfg(test)]
 mod test {
-    use crate::chrome::encrypted_value::decrypt_value;
+    use crate::browser::chrome::encrypted_value::decrypt_value;
 
     use super::*;
 

@@ -11,7 +11,7 @@ use windows::Win32::{
     System::Memory::LocalFree,
 };
 
-use crate::chrome::LocalState;
+use crate::browser::chrome::LocalState;
 
 /// Decrypts a value encrypted with the Windows DPAPI.
 ///

@@ -2,16 +2,17 @@
 
 use std::{ffi::OsString, path::PathBuf, process::ExitCode, str::FromStr};
 
-use app::{App, Browser};
+use app::App;
 use bpaf::Bpaf;
 use color_eyre::Result;
 use http::Uri;
 
 mod app;
-mod chrome;
-mod firefox;
+mod browser;
 mod url;
 mod utils;
+
+use browser::Browser;
 
 #[derive(Debug, Clone)]
 enum WrappedCmd {

@@ -18,6 +18,10 @@ tempfile = "3.3.0"
 dirs-next = "2.0.0"
 itertools = { version = "0.10.5", optional = true }
 
+[[bin]]
+name = "gateau"
+path = "src/main.rs"
+
 [features]
 default = []
 human = ["dep:itertools"]

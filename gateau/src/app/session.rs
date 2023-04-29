@@ -9,9 +9,9 @@ use cookie::Cookie;
 use http::Uri;
 use tempfile::tempdir;
 
-use crate::{app::filter_hosts, chrome::ChromeVariant, utils::sqlite_predicate_builder};
+use crate::{app::filter_hosts, browser::chrome::ChromeVariant, utils::sqlite_predicate_builder};
 
-use super::Browser;
+use crate::browser::Browser;
 
 /// Builder for a session.
 /// A session is a temporary browser instance.
@@ -57,7 +57,7 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider = crate::firefox::paths::PathProvider::new::<_, OsString>(
+                let path_provider = crate::browser::firefox::paths::PathProvider::new::<_, OsString>(
                     session_context.path(),
                     None,
                 );
@@ -71,7 +71,7 @@ impl<'a> SessionBuilder {
                     filter_hosts(host, &hosts)
                 })?;
 
-                let cookies = crate::firefox::get_cookies(&conn)?;
+                let cookies = crate::browser::firefox::get_cookies(&conn)?;
 
                 Ok(Session { cookies })
             }
@@ -105,7 +105,7 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider = crate::chrome::paths::PathProvider::new::<_, OsString>(
+                let path_provider = crate::browser::chrome::paths::PathProvider::new::<_, OsString>(
                     session_context.path(),
                     None,
                 );
@@ -119,7 +119,8 @@ impl<'a> SessionBuilder {
                     filter_hosts(host, &hosts)
                 })?;
 
-                let cookies = crate::chrome::get_cookies(&conn, chrome_variant, path_provider)?;
+                let cookies =
+                    crate::browser::chrome::get_cookies(&conn, chrome_variant, path_provider)?;
 
                 Ok(Session { cookies })
             }
