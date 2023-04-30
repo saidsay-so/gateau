@@ -36,12 +36,18 @@
 //!   ON cookies(host_key, top_frame_site_key, NAME, path);
 //! ```
 //!
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    panic::{RefUnwindSafe, UnwindSafe},
+    rc::Rc,
+    sync::{Arc, RwLock},
+};
 
 use color_eyre::eyre::Context;
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::sync::OnceCell;
-use rusqlite::Connection;
+use regex::Regex;
+use rusqlite::{functions::FunctionFlags, Connection};
 use serde::Deserialize;
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -253,9 +259,129 @@ fn get_local_state(path: &Path) -> color_eyre::Result<LocalState> {
     ))?)
 }
 
+/// Chrome cookies manager.
+struct ChromeManager {
+    conn: Connection,
+    variant: ChromeVariant,
+    path_provider: PathProvider,
+    filter: Arc<RwLock<Regex>>,
+}
+
+impl ChromeManager {
+    /// Create a new instance of `Chrome`.
+    pub fn new(variant: ChromeVariant, path_provider: PathProvider) -> color_eyre::Result<Self> {
+        let conn = Connection::open(path_provider.cookies_database())?;
+
+        let filter: Arc<RwLock<Regex>> = Arc::new(RwLock::new(Regex::new("").unwrap()));
+
+        {
+            let filter = filter.clone();
+            conn.create_scalar_function("host_filter", 1, FunctionFlags::default(), move |ctx| {
+                Ok(filter
+                    .read()
+                    .expect("Failed to read regex filter value")
+                    .is_match(&ctx.get::<String>(0)?))
+            })
+            .wrap_err("Failed to create SQLite function")?;
+        }
+
+        Ok(Self {
+            conn,
+            variant,
+            path_provider,
+            filter,
+        })
+    }
+
+    /// Set a filter for the cookies.
+    pub fn set_filter(&self, filter: Regex) {
+        *self
+            .filter
+            .write()
+            .expect("Failed to write regex filter value") = filter;
+    }
+
+    /// Get cookies from the database.
+    pub fn get_cookies(&self) -> color_eyre::Result<Vec<Cookie<'static>>> {
+        let query = "SELECT name, value, encrypted_value, 
+                        host_key, path, expires_utc, 
+                        is_secure, samesite, is_httponly
+        FROM cookies
+        WHERE host_filter(host_key)";
+
+        let mut stmt = self.conn.prepare(query)?;
+
+        let cookies = stmt
+            .query_map([], |row| {
+                Ok(ChromeCookie {
+                    name: row.get::<_, String>(0)?,
+                    value: row.get::<_, String>(1)?,
+                    encrypted_value: row.get::<_, Vec<u8>>(2)?,
+                    host: row.get::<_, String>(3)?,
+                    path: row.get::<_, String>(4)?,
+                    expires: row.get::<_, i64>(5)?,
+                    secure: row.get::<_, bool>(6)?,
+                    same_site: row.get::<_, i64>(7)?,
+                    http_only: row.get::<_, bool>(8)?,
+                })
+            })?
+            .filter_map(|cookie| cookie.ok())
+            .map(
+                |ChromeCookie {
+                     name,
+                     value,
+                     encrypted_value,
+                     host,
+                     path,
+                     expires,
+                     secure,
+                     same_site,
+                     http_only,
+                 }|
+                 -> color_eyre::Result<Cookie<'static>> {
+                    let value = if encrypted_value.is_empty() {
+                        value
+                    } else {
+                        #[cfg(not(windows))]
+                        {
+                            decrypt_cookie_value(encrypted_value, self.variant)?
+                        }
+
+                        #[cfg(windows)]
+                        {
+                            decrypt_cookie_value(encrypted_value, self.path_provider.local_state())?
+                        }
+                    };
+
+                    Ok(CookieBuilder::new(name, value)
+                        .domain(host)
+                        .path(path)
+                        .expires(Expiration::from(
+                            OffsetDateTime::from_unix_timestamp_nanos(
+                                chrome_to_unix_timestamp_nanos(expires),
+                            )
+                            .expect("Invalid date"),
+                        ))
+                        .secure(secure)
+                        .same_site(match same_site {
+                            0 => SameSite::None,
+                            1 => SameSite::Lax,
+                            _ => SameSite::Strict,
+                        })
+                        .http_only(http_only)
+                        .finish()
+                        .into_owned())
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(cookies)
+    }
+}
+
 /// Get cookies from the database.
 #[allow(unused_variables)]
-pub(crate) fn get_cookies(
+pub fn get_cookies(
     conn: &Connection,
     variant: ChromeVariant,
     path_provider: PathProvider,

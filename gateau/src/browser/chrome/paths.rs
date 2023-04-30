@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) struct PathProvider {
+pub struct PathProvider {
     _base_dir: PathBuf,
     _profile: OsString,
     profile_dir: PathBuf,
