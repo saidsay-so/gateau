@@ -38,13 +38,10 @@
 //!
 use std::{
     collections::HashMap,
-    panic::{RefUnwindSafe, UnwindSafe},
-    path,
-    rc::Rc,
     sync::{Arc, RwLock},
 };
 
-use color_eyre::eyre::Context;
+
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::sync::OnceCell;
 use regex::Regex;
