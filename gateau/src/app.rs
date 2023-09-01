@@ -67,8 +67,11 @@ impl App {
                 sqlite_predicate_builder(&conn, "host_filter", move |host| {
                     filter_hosts(host, &hosts)
                 })?;
+                let chrome_manager = chrome::ChromeManager::new(chrome_variant, path_provider)?;
 
-                chrome::get_cookies(&conn, chrome_variant, path_provider)
+                chrome_manager
+                    .get_cookies()
+                    .wrap_err("Failed to get cookies from Chrome")
             }
         }
     }

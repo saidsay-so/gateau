@@ -18,6 +18,7 @@ tempfile = "3.3.0"
 dirs-next = "2.0.0"
 itertools = { version = "0.10.5", optional = true }
 regex = "1.8.1"
+thiserror = "1.0.40"
 
 [[bin]]
 name = "gateau"

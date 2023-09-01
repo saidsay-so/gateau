@@ -7,11 +7,26 @@
 use base64ct::{Base64, Encoding};
 use color_eyre::eyre::ensure;
 use windows::Win32::{
-    Security::Cryptography::{CryptUnprotectData, CRYPTOAPI_BLOB},
+    Foundation::HLOCAL,
+    Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB},
     System::Memory::LocalFree,
 };
 
 use crate::browser::chrome::LocalState;
+
+#[derive(Debug, thiserror::Error)]
+pub enum DecryptDpapiValueError {
+    #[error("Failed to decrypt value, buffer is too long")]
+    BufferTooLong {
+        buffer: Box<[u8]>,
+        source: std::num::TryFromIntError,
+    },
+
+    #[error("Failed to decrypt value: {source}")]
+    UnknownError {
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+}
 
 /// Decrypts a value encrypted with the Windows DPAPI.
 ///
@@ -20,13 +35,18 @@ use crate::browser::chrome::LocalState;
 /// For the function call to be safe, `encrypted_value` must be a valid buffer for the entire duration of the call,
 /// which is normally guaranteed by the borrow checker.
 #[allow(unsafe_code)]
-pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Vec<u8>> {
-    let data_in = CRYPTOAPI_BLOB {
-        cbData: u32::try_from(encrypted_value.len())?,
+pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> Result<Vec<u8>, DecryptDpapiValueError> {
+    let data_in = CRYPT_INTEGER_BLOB {
+        cbData: u32::try_from(encrypted_value.len()).map_err(|source| {
+            DecryptDpapiValueError::BufferTooLong {
+                buffer: encrypted_value.to_vec().into_boxed_slice(),
+                source,
+            }
+        })?,
         pbData: encrypted_value.as_mut_ptr(),
     };
 
-    let mut data_out = CRYPTOAPI_BLOB::default();
+    let mut data_out = CRYPT_INTEGER_BLOB::default();
 
     // SAFETY: `CryptUnprotectData` is a Windows API function whcih is safe to call with the correct parameters.
     // See https://docs.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata
@@ -35,12 +55,17 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
     // We assume that `encrypted_value` is a valid buffer for the duration of the call.
     // We check that `data_out.pbData` is not null before creating a slice and that `CryptUnprotectData` returns a success code.
     unsafe {
-        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).ok()?;
+        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out)
+            .ok()
+            .map_err(|source| DecryptDpapiValueError::UnknownError {
+                source: source.into(),
+            })?;
 
-        ensure!(!data_out.pbData.is_null(), "CryptUnprotectData failed");
+        assert!(!data_out.pbData.is_null(), "CryptUnprotectData failed");
 
         let data = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
-        LocalFree(data_out.pbData as _);
+        let ptr = HLOCAL(data_out.pbData as _);
+        let _ = LocalFree(ptr);
 
         Ok(data)
     }
@@ -61,21 +86,45 @@ pub(crate) fn get_encrypted_key(local_state: &LocalState) -> Option<String> {
     })
 }
 
+/// Prefix for encrypted keys in the Local State file.
+const DPAPI_PREFIX: &[u8] = b"DPAPI";
+
+#[derive(Debug, thiserror::Error)]
+pub enum DecryptDpapiKeyError {
+    #[error("Failed to decrypt key due to invalid format")]
+    InvalidKeyFormat {
+        key: String,
+        source: base64ct::Error,
+    },
+
+    #[error("Failed to decrypt key due to invalid prefix, expected {:?} ({})", DPAPI_PREFIX, std::str::from_utf8(DPAPI_PREFIX).unwrap())]
+    InvalidKeyPrefix { key: Box<[u8]> },
+
+    #[error("Failed to decrypt key: {source}")]
+    DecryptError {
+        #[from]
+        source: DecryptDpapiValueError,
+    },
+}
+
 /// Decrypts the key encrypted with DPAPI and encoded in Base64.
 pub(crate) fn decrypt_dpapi_encrypted_key<S: AsRef<str>>(
     encrypted_key: S,
-) -> color_eyre::Result<Vec<u8>> {
-    /// Prefix for encrypted keys in the Local State file.
-    const DPAPI_PREFIX: &[u8] = b"DPAPI";
-
-    let mut encrypted_key = Base64::decode_vec(encrypted_key.as_ref())?;
-    ensure!(
-        encrypted_key.starts_with(DPAPI_PREFIX),
-        "invalid encrypted key"
-    );
+) -> Result<Vec<u8>, DecryptDpapiKeyError> {
+    let mut encrypted_key = Base64::decode_vec(encrypted_key.as_ref()).map_err(|source| {
+        DecryptDpapiKeyError::InvalidKeyFormat {
+            key: encrypted_key.as_ref().to_string(),
+            source,
+        }
+    })?;
+    if !encrypted_key.starts_with(DPAPI_PREFIX) {
+        return Err(DecryptDpapiKeyError::InvalidKeyPrefix {
+            key: encrypted_key.into(),
+        });
+    }
     let mut stripped_encrypted_key = encrypted_key.get_mut(DPAPI_PREFIX.len() - 1..).unwrap();
 
-    decrypt_dpapi(&mut stripped_encrypted_key)
+    decrypt_dpapi(&mut stripped_encrypted_key).map_err(From::from)
 }
 
 #[cfg(test)]

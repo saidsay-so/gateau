@@ -691,6 +691,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "tini",
  "windows",
 ]

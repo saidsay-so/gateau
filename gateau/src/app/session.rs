@@ -9,7 +9,11 @@ use cookie::Cookie;
 use http::Uri;
 use tempfile::tempdir;
 
-use crate::{app::filter_hosts, browser::chrome::ChromeVariant, utils::sqlite_predicate_builder};
+use crate::{
+    app::filter_hosts,
+    browser::chrome::{ChromeManager, ChromeVariant},
+    utils::sqlite_predicate_builder,
+};
 
 use crate::browser::Browser;
 
@@ -119,8 +123,9 @@ impl<'a> SessionBuilder {
                     filter_hosts(host, &hosts)
                 })?;
 
+                let manager = ChromeManager::new(chrome_variant, path_provider)?;
                 let cookies =
-                    crate::browser::chrome::get_cookies(&conn, chrome_variant, path_provider)?;
+                    manager.get_cookies()?;
 
                 Ok(Session { cookies })
             }
