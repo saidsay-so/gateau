@@ -5,6 +5,8 @@ use self::chrome::ChromeVariant;
 pub mod chrome;
 pub mod firefox;
 
+pub type HostFilterFn = dyn FnMut(&str) -> bool + Send + Sync;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Browser {
     Firefox,

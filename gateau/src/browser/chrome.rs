@@ -38,9 +38,8 @@
 //!
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
 };
-
 
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::sync::OnceCell;
@@ -65,6 +64,8 @@ pub(crate) mod encrypted_value;
 pub(crate) mod paths;
 
 use self::paths::PathProvider;
+
+use super::HostFilterFn;
 
 /// Local state stored in `Local State` file.
 #[derive(Debug, Clone, Deserialize)]
@@ -199,7 +200,7 @@ pub struct ChromeManager {
     variant: ChromeVariant,
     path_provider: PathProvider,
     key_cache: OnceCell<Vec<u8>>,
-    filter: Arc<RwLock<Regex>>,
+    filter: Arc<Mutex<Box<HostFilterFn>>>,
 }
 
 impl ChromeManager {
@@ -207,24 +208,26 @@ impl ChromeManager {
     pub fn new(
         variant: ChromeVariant,
         path_provider: PathProvider,
+        filter: Box<HostFilterFn>,
+        bypass_lock: bool,
     ) -> Result<Self, ChromeManagerError> {
-        let db_path = path_provider.cookies_database();
-        let conn =
-            Connection::open(&db_path).map_err(|source| ChromeManagerError::DatabaseOpen {
-                path: db_path.display().to_string(),
+        let conn = crate::utils::get_connection(path_provider.cookies_database(), bypass_lock)
+            .map_err(|source| ChromeManagerError::DatabaseOpen {
+                path: path_provider
+                    .cookies_database()
+                    .to_string_lossy()
+                    .to_string(),
                 source,
             })?;
 
-        let filter: Arc<RwLock<Regex>> = Arc::new(RwLock::new(Regex::new("").unwrap()));
+        let filter: Arc<Mutex<Box<HostFilterFn>>> = Arc::new(Mutex::new(filter));
 
         {
             let filter = filter.clone();
             conn.create_scalar_function("host_filter", 1, FunctionFlags::default(), move |ctx| {
                 let host = &ctx.get::<String>(0)?;
-                Ok(filter
-                    .read()
-                    .expect("Failed to read regex filter value")
-                    .is_match(host))
+                let mut f = filter.lock().expect("Failed to read regex filter value");
+                Ok(f(&host))
             })
             .map_err(|source| ChromeManagerError::SqliteFunctionCreate { source })?;
         }
@@ -239,18 +242,14 @@ impl ChromeManager {
     }
 
     /// Create a new instance of `ChromeManager` with the default profile.
-    pub fn default(variant: ChromeVariant) -> Result<Self, ChromeManagerError> {
+    pub fn default_profile(
+        variant: ChromeVariant,
+        filter: Box<HostFilterFn>,
+        bypass_lock: bool,
+    ) -> Result<Self, ChromeManagerError> {
         let path_provider = PathProvider::default_profile(variant);
 
-        Self::new(variant, path_provider)
-    }
-
-    /// Set a filter for the cookies.
-    pub fn set_filter(&self, filter: Regex) {
-        *self
-            .filter
-            .write()
-            .expect("Failed to write regex filter value") = filter;
+        Self::new(variant, path_provider, filter, bypass_lock)
     }
 
     /// Get cookies from the database.

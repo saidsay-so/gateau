@@ -97,7 +97,11 @@ pub enum DecryptDpapiKeyError {
         source: base64ct::Error,
     },
 
-    #[error("Failed to decrypt key due to invalid prefix, expected {:?} ({})", DPAPI_PREFIX, std::str::from_utf8(DPAPI_PREFIX).unwrap())]
+    #[error(
+        "Failed to decrypt key due to invalid prefix, found '{}' but expected {}",
+        String::from_utf8_lossy(key),
+        String::from_utf8_lossy(DPAPI_PREFIX)
+    )]
     InvalidKeyPrefix { key: Box<[u8]> },
 
     #[error("Failed to decrypt key: {source}")]

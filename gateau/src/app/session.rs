@@ -12,7 +12,6 @@ use tempfile::tempdir;
 use crate::{
     app::filter_hosts,
     browser::chrome::{ChromeManager, ChromeVariant},
-    utils::sqlite_predicate_builder,
 };
 
 use crate::browser::Browser;
@@ -68,14 +67,12 @@ impl<'a> SessionBuilder {
 
                 let db_path = path_provider.cookies_database();
 
-                let conn = crate::utils::get_connection(db_path, false)?;
-
+                let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |host| {
-                    filter_hosts(host, &hosts)
-                })?;
+                let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
 
-                let cookies = crate::browser::firefox::get_cookies(&conn)?;
+                let manager = crate::browser::firefox::FirefoxManager::new(path_provider, filter, false)?;
+                let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })
             }
@@ -114,18 +111,11 @@ impl<'a> SessionBuilder {
                     None,
                 );
 
-                let db_path = path_provider.cookies_database();
-
-                let conn = crate::utils::get_connection(db_path, false)?;
-
+                let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |host| {
-                    filter_hosts(host, &hosts)
-                })?;
-
-                let manager = ChromeManager::new(chrome_variant, path_provider)?;
-                let cookies =
-                    manager.get_cookies()?;
+                let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
+                let manager = ChromeManager::new(chrome_variant, path_provider, filter, false)?;
+                let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })
             }

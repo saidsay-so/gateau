@@ -13,7 +13,7 @@ use color_eyre::{
 use cookie::Cookie;
 use http::Uri;
 
-use crate::{url::BaseDomain, utils::sqlite_predicate_builder, Args};
+use crate::{browser::firefox::FirefoxManager, url::BaseDomain, Args};
 
 use crate::browser::{chrome, firefox, Browser};
 
@@ -44,30 +44,26 @@ impl App {
             Browser::Firefox => {
                 let path_provider = firefox::paths::PathProvider::default_profile();
 
-                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
-
-                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
-
+                let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |cookie_host| {
-                    filter_hosts(cookie_host, &hosts)
-                })?;
+                let filter = Box::from(move |host: &str| {
+                    let hosts = Arc::clone(&hosts);
+                    filter_hosts(host, &hosts)
+                });
 
-                firefox::get_cookies(&conn)
+                let manager = FirefoxManager::new(path_provider, filter, bypass_lock)?;
+                manager
+                    .get_cookies()
+                    .wrap_err("Failed to get cookies from Firefox")
             }
 
             Browser::ChromeVariant(chrome_variant) => {
                 let path_provider = chrome::paths::PathProvider::default_profile(chrome_variant);
 
-                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
-
-                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
-
-                let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |host| {
-                    filter_hosts(host, &hosts)
-                })?;
-                let chrome_manager = chrome::ChromeManager::new(chrome_variant, path_provider)?;
+                let hosts = Arc::from(hosts);
+                let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
+                let chrome_manager =
+                    chrome::ChromeManager::new(chrome_variant, path_provider, filter, bypass_lock)?;
 
                 chrome_manager
                     .get_cookies()
