@@ -5,7 +5,6 @@
 //! with the AES-256 algorithm and the GCM mode.
 
 use base64ct::{Base64, Encoding};
-use color_eyre::eyre::ensure;
 use windows::Win32::{
     Foundation::HLOCAL,
     Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB},

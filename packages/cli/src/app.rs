@@ -11,14 +11,14 @@ use color_eyre::{
     Result,
 };
 use cookie::Cookie;
-use http::Uri;
-
 use gateau::browser::{
     chrome,
     firefox::{self, FirefoxManager},
     Browser,
 };
-use gateau::url::BaseDomain;
+use http::Uri;
+
+use crate::url::BaseDomain;
 
 use self::session::SessionBuilder;
 use super::Args;

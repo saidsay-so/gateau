@@ -42,11 +42,13 @@ use std::{
 };
 
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
-use once_cell::sync::OnceCell;
+use once_cell::unsync::OnceCell;
 
 use rusqlite::{functions::FunctionFlags, Connection};
 use serde::Deserialize;
 use thiserror::Error;
+
+use crate::utils::get_connection;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 use self::encrypted_value::posix;
@@ -211,13 +213,15 @@ impl ChromeManager {
         filter: Box<HostFilterFn>,
         bypass_lock: bool,
     ) -> Result<Self, ChromeManagerError> {
-        let conn = crate::utils::get_connection(path_provider.cookies_database(), bypass_lock)
-            .map_err(|source| ChromeManagerError::DatabaseOpen {
-                path: path_provider
-                    .cookies_database()
-                    .to_string_lossy()
-                    .to_string(),
-                source,
+        let conn =
+            get_connection(path_provider.cookies_database(), bypass_lock).map_err(|source| {
+                ChromeManagerError::DatabaseOpen {
+                    path: path_provider
+                        .cookies_database()
+                        .to_string_lossy()
+                        .to_string(),
+                    source,
+                }
             })?;
 
         let filter: Arc<Mutex<Box<HostFilterFn>>> = Arc::new(Mutex::new(filter));
@@ -239,6 +243,11 @@ impl ChromeManager {
             filter,
             key_cache: OnceCell::new(),
         })
+    }
+
+    /// Get the path provider.
+    pub fn path_provider(&self) -> &PathProvider {
+        &self.path_provider
     }
 
     /// Create a new instance of `ChromeManager` with the default profile.

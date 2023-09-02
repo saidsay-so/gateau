@@ -33,6 +33,8 @@ use cookie::{Cookie, CookieBuilder, Expiration, SameSite};
 use rusqlite::functions::FunctionFlags;
 use rusqlite::Connection;
 
+use crate::utils::get_connection;
+
 use super::HostFilterFn;
 
 mod paths;
@@ -52,6 +54,7 @@ pub enum FirefoxManagerError {
     SqliteQuery { source: rusqlite::Error },
 }
 
+/// Firefox cookie database manager.
 pub struct FirefoxManager {
     path_provider: paths::PathProvider,
     conn: Connection,
@@ -65,7 +68,7 @@ impl FirefoxManager {
         filter: Box<HostFilterFn>,
         bypass_lock: bool,
     ) -> Result<Self> {
-        let conn = crate::utils::get_connection(path_provider.cookies_database(), bypass_lock)
+        let conn = get_connection(path_provider.cookies_database(), bypass_lock)
             .map_err(|source| FirefoxManagerError::SqliteOpen { source })?;
         let filter = Arc::from(Mutex::from(filter));
 
@@ -84,6 +87,10 @@ impl FirefoxManager {
             conn,
             filter,
         })
+    }
+
+    pub fn path_provider(&self) -> &paths::PathProvider {
+        &self.path_provider
     }
 
     pub fn default(filter: Box<HostFilterFn>, bypass_lock: bool) -> Result<Self> {

@@ -8,6 +8,7 @@ use color_eyre::Result;
 use http::Uri;
 
 mod app;
+mod url;
 
 use gateau::browser::Browser;
 
