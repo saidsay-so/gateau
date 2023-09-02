@@ -48,7 +48,7 @@ use rusqlite::{functions::FunctionFlags, Connection};
 use serde::Deserialize;
 use thiserror::Error;
 
-use crate::utils::get_connection;
+use super::get_connection;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 use self::encrypted_value::posix;
@@ -88,32 +88,6 @@ struct ChromeCookie {
     same_site: i64,
     http_only: bool,
 }
-
-// TODO: Do we need support for multiple variants at the same time?
-// struct ChromeCacheKeyVariants {
-//     chromium: OnceCell<Vec<u8>>,
-//     chrome: OnceCell<Vec<u8>>,
-// }
-
-// impl ChromeCacheKeyVariants {
-//     const fn default() -> Self {
-//         Self {
-//             chromium: OnceCell::new(),
-//             chrome: OnceCell::new(),
-//         }
-//     }
-// }
-
-// impl Index<ChromeVariant> for ChromeCacheKeyVariants {
-//     type Output = OnceCell<Vec<u8>>;
-
-//     fn index(&self, index: ChromeVariant) -> &Self::Output {
-//         match index {
-//             ChromeVariant::Chromium => &self.chromium,
-//             ChromeVariant::Chrome => &self.chrome,
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ChromeVariant {
@@ -259,6 +233,14 @@ impl ChromeManager {
         let path_provider = PathProvider::default_profile(variant);
 
         Self::new(variant, path_provider, filter, bypass_lock)
+    }
+
+    pub fn set_filter(&self, filter: Box<HostFilterFn>) {
+        let mut f = self
+            .filter
+            .lock()
+            .expect("Failed to read regex filter value");
+        *f = filter;
     }
 
     /// Get cookies from the database.

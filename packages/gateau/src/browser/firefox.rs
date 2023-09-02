@@ -33,7 +33,7 @@ use cookie::{Cookie, CookieBuilder, Expiration, SameSite};
 use rusqlite::functions::FunctionFlags;
 use rusqlite::Connection;
 
-use crate::utils::get_connection;
+use super::get_connection;
 
 use super::HostFilterFn;
 
@@ -89,11 +89,13 @@ impl FirefoxManager {
         })
     }
 
+    /// Get the path provider.
     pub fn path_provider(&self) -> &paths::PathProvider {
         &self.path_provider
     }
 
-    pub fn default(filter: Box<HostFilterFn>, bypass_lock: bool) -> Result<Self> {
+    /// Create a new Firefox manager with the default profile.
+    pub fn default_profile(filter: Box<HostFilterFn>, bypass_lock: bool) -> Result<Self> {
         let path_provider = paths::PathProvider::default_profile();
         Self::new(path_provider, filter, bypass_lock)
     }
