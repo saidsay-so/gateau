@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Path provider for Firefox.
 pub struct PathProvider {
     _base_dir: PathBuf,
     profile_dir: PathBuf,

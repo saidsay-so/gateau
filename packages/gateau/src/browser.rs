@@ -5,6 +5,7 @@ use self::chrome::ChromeVariant;
 pub mod chrome;
 pub mod firefox;
 
+/// Function to filter hosts.
 pub type HostFilterFn = dyn FnMut(&str) -> bool + Send + Sync;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -27,6 +28,14 @@ impl std::fmt::Display for Browser {
 impl FromStr for Browser {
     type Err = String;
 
+    /// Parse a browser from a string.
+    ///
+    /// Supported browsers are:
+    /// - firefox
+    /// - chromium
+    /// - chrome
+    /// - edge
+    ///
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "firefox" => Ok(Browser::Firefox),

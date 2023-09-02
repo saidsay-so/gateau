@@ -13,6 +13,7 @@ use pbkdf2::{
 
 use crate::browser::chrome::ChromeVariant;
 
+/// Error returned when failing to decrypt a value.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Failed to get password from keychain: {source}")]

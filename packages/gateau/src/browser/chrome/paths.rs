@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Path provider for Chrome.
 pub struct PathProvider {
     _base_dir: PathBuf,
     _profile: OsString,
