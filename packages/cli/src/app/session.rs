@@ -9,12 +9,13 @@ use cookie::Cookie;
 use http::Uri;
 use tempfile::tempdir;
 
-use crate::{
-    app::filter_hosts,
-    browser::chrome::{ChromeManager, ChromeVariant},
-};
+use crate::app::filter_hosts;
 
-use crate::browser::Browser;
+use gateau::browser::{
+    chrome::{self, ChromeManager, ChromeVariant},
+    firefox::{self, FirefoxManager},
+    Browser,
+};
 
 /// Builder for a session.
 /// A session is a temporary browser instance.
@@ -60,15 +61,13 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider =
-                    crate::browser::firefox::paths::PathProvider::from_root(session_context.path());
+                let path_provider = firefox::PathProvider::from_root(session_context.path());
 
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
 
-                let manager =
-                    crate::browser::firefox::FirefoxManager::new(path_provider, filter, false)?;
+                let manager = FirefoxManager::new(path_provider, filter, false)?;
                 let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })
@@ -103,8 +102,7 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider =
-                    crate::browser::chrome::paths::PathProvider::from_root(session_context.path());
+                let path_provider = chrome::PathProvider::from_root(session_context.path());
 
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);

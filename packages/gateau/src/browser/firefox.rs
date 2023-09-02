@@ -35,7 +35,8 @@ use rusqlite::Connection;
 
 use super::HostFilterFn;
 
-pub mod paths;
+mod paths;
+pub use paths::PathProvider;
 
 pub type Result<T, E = FirefoxManagerError> = std::result::Result<T, E>;
 

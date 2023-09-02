@@ -1,0 +1,22 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bpaf = { version = "0.7.7", features = ["derive", "bright-color"] }
+cookie = "0.17.0"
+color-eyre = "0.6.2"
+gateau = { path = "../gateau" }
+http = "0.2.8"
+itertools = { version = "0.10.5", optional = true }
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.91"
+tempfile = "3.3.0"
+
+[features]
+default = []
+human = ["dep:itertools"]
+bundled = ["gateau/bundled"]

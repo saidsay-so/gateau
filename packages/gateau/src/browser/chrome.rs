@@ -61,9 +61,9 @@ use self::encrypted_value::mac;
 use {self::encrypted_value::windows, std::path::Path};
 
 pub(crate) mod encrypted_value;
-pub(crate) mod paths;
+mod paths;
 
-use self::paths::PathProvider;
+pub use paths::PathProvider;
 
 use super::HostFilterFn;
 

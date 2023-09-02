@@ -8,11 +8,8 @@ use color_eyre::Result;
 use http::Uri;
 
 mod app;
-mod browser;
-mod url;
-mod utils;
 
-use browser::Browser;
+use gateau::browser::Browser;
 
 #[derive(Debug, Clone)]
 enum WrappedCmd {

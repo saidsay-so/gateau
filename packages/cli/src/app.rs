@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    io::{self, Write, BufWriter},
+    io::{self, BufWriter, Write},
     path::PathBuf,
     process::Command,
     sync::Arc,
@@ -13,11 +13,15 @@ use color_eyre::{
 use cookie::Cookie;
 use http::Uri;
 
-use crate::{browser::firefox::FirefoxManager, url::BaseDomain, Args};
-
-use crate::browser::{chrome, firefox, Browser};
+use gateau::browser::{
+    chrome,
+    firefox::{self, FirefoxManager},
+    Browser,
+};
+use gateau::url::BaseDomain;
 
 use self::session::SessionBuilder;
+use super::Args;
 
 mod output;
 mod session;
@@ -43,9 +47,9 @@ impl App {
         match browser {
             Browser::Firefox => {
                 let path_provider = if let Some(root_dir) = root_dir {
-                    firefox::paths::PathProvider::from_root(root_dir)
+                    firefox::PathProvider::from_root(root_dir)
                 } else {
-                    firefox::paths::PathProvider::default_profile()
+                    firefox::PathProvider::default_profile()
                 };
 
                 let hosts = Arc::from(hosts);
@@ -63,9 +67,9 @@ impl App {
 
             Browser::ChromeVariant(chrome_variant) => {
                 let path_provider = if let Some(root_dir) = root_dir {
-                    chrome::paths::PathProvider::from_root(root_dir)
+                    chrome::PathProvider::from_root(root_dir)
                 } else {
-                    chrome::paths::PathProvider::default_profile(chrome_variant)
+                    chrome::PathProvider::default_profile(chrome_variant)
                 };
 
                 let hosts = Arc::from(hosts);

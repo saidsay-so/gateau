@@ -321,6 +321,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "bpaf",
+ "color-eyre",
+ "cookie",
+ "gateau",
+ "http",
+ "itertools",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "color-eyre"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -702,14 +717,11 @@ dependencies = [
  "aes 0.8.3",
  "aes-gcm",
  "base64ct",
- "bpaf",
  "cbc",
  "cfg-if",
- "color-eyre",
  "cookie",
  "dirs-next",
  "http",
- "itertools",
  "keyring",
  "once_cell",
  "pbkdf2",
@@ -717,7 +729,6 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror",
  "tini",
  "windows",

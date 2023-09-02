@@ -3,7 +3,7 @@ use std::{net::Ipv4Addr, str::FromStr};
 use http::Uri;
 
 /// Trait for extracting the base domain from a URL.
-pub(crate) trait BaseDomain {
+pub trait BaseDomain {
     /// Returns the base domain of the URL, if it is a valid domain.
     fn base_domain(&self) -> Option<String>;
 }
