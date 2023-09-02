@@ -10,7 +10,7 @@ use http::Uri;
 mod app;
 mod url;
 
-use gateau::browser::Browser;
+use gateau::Browser;
 
 #[derive(Debug, Clone)]
 enum WrappedCmd {

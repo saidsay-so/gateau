@@ -15,7 +15,7 @@ use pbkdf2::{
     Algorithm, Params, Pbkdf2,
 };
 
-use crate::browser::chrome::ChromeVariant;
+use crate::chrome::ChromeVariant;
 
 /// Salt for symmetric key derivation.
 const SYMMETRIC_SALT: &[u8] = b"saltysalt";

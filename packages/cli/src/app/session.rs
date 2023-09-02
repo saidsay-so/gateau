@@ -11,7 +11,7 @@ use tempfile::tempdir;
 
 use crate::app::filter_hosts;
 
-use gateau::browser::{
+use gateau::{
     chrome::{self, ChromeManager, ChromeVariant},
     firefox::{self, FirefoxManager},
     Browser,

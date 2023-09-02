@@ -11,7 +11,7 @@ use color_eyre::{
     Result,
 };
 use cookie::Cookie;
-use gateau::browser::{
+use gateau::{
     chrome,
     firefox::{self, FirefoxManager},
     Browser,
