@@ -1,5 +1,5 @@
 use std::{
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     path::{Path, PathBuf},
 };
 
@@ -22,6 +22,10 @@ impl PathProvider {
                 base_dir
             },
         }
+    }
+
+    pub fn from_root<R: AsRef<Path>>(root_dir: R) -> Self {
+        Self::new::<_, &OsStr>(root_dir, None)
     }
 
     /// Returns a path provider for the default profile.

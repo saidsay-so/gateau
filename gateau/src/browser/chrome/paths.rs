@@ -14,7 +14,7 @@ pub struct PathProvider {
 impl PathProvider {
     /// Create a new path provider for the given profile and variant.
     /// If no profile is given, the root dir is used as the profile dir.
-    pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
+    pub fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
         let profile = profile
             .as_ref()
@@ -32,8 +32,12 @@ impl PathProvider {
         }
     }
 
+    pub fn from_root<P: AsRef<Path>>(root_dir: P) -> Self {
+        Self::new::<_, &OsStr>(root_dir, None)
+    }
+
     /// Returns a path provider for the default profile of the given browser variant.
-    pub(crate) fn default_profile(variant: ChromeVariant) -> Self {
+    pub fn default_profile(variant: ChromeVariant) -> Self {
         let root_dir = if cfg!(windows) {
             dirs_next::data_local_dir()
         } else {
@@ -71,7 +75,7 @@ impl PathProvider {
     }
 
     /// Returns the path to the cookies database.
-    pub(crate) fn cookies_database(&self) -> PathBuf {
+    pub fn cookies_database(&self) -> PathBuf {
         // The cookies database is stored in a subfolder called "Network" in newer versions of
         // Chromium (on Windows it seems). If this folder does not exist, we fall back to the old location.
         let new_path = self.profile_dir.join("Network").join("Cookies");

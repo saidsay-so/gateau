@@ -38,12 +38,12 @@
 //!
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
 };
 
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::sync::OnceCell;
-use regex::Regex;
+
 use rusqlite::{functions::FunctionFlags, Connection};
 use serde::Deserialize;
 use thiserror::Error;

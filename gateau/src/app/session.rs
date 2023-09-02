@@ -60,18 +60,15 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider = crate::browser::firefox::paths::PathProvider::new::<_, OsString>(
-                    session_context.path(),
-                    None,
-                );
-
-                let db_path = path_provider.cookies_database();
+                let path_provider =
+                    crate::browser::firefox::paths::PathProvider::from_root(session_context.path());
 
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
 
-                let manager = crate::browser::firefox::FirefoxManager::new(path_provider, filter, false)?;
+                let manager =
+                    crate::browser::firefox::FirefoxManager::new(path_provider, filter, false)?;
                 let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })
@@ -106,10 +103,8 @@ impl<'a> SessionBuilder {
 
                 child.wait()?;
 
-                let path_provider = crate::browser::chrome::paths::PathProvider::new::<_, OsString>(
-                    session_context.path(),
-                    None,
-                );
+                let path_provider =
+                    crate::browser::chrome::paths::PathProvider::from_root(session_context.path());
 
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);

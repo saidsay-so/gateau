@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    io::{self, Write},
+    io::{self, Write, BufWriter},
     path::PathBuf,
     process::Command,
     sync::Arc,
@@ -33,7 +33,7 @@ impl App {
 
     /// Get the cookies matching the provided hosts from the specified browser.
     fn get_cookies(
-        cookie_db_path: Option<PathBuf>,
+        root_dir: Option<PathBuf>,
         bypass_lock: bool,
         browser: Browser,
         hosts: Vec<Uri>,
@@ -42,7 +42,11 @@ impl App {
 
         match browser {
             Browser::Firefox => {
-                let path_provider = firefox::paths::PathProvider::default_profile();
+                let path_provider = if let Some(root_dir) = root_dir {
+                    firefox::paths::PathProvider::from_root(root_dir)
+                } else {
+                    firefox::paths::PathProvider::default_profile()
+                };
 
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
@@ -58,7 +62,11 @@ impl App {
             }
 
             Browser::ChromeVariant(chrome_variant) => {
-                let path_provider = chrome::paths::PathProvider::default_profile(chrome_variant);
+                let path_provider = if let Some(root_dir) = root_dir {
+                    chrome::paths::PathProvider::from_root(root_dir)
+                } else {
+                    chrome::paths::PathProvider::default_profile(chrome_variant)
+                };
 
                 let hosts = Arc::from(hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
@@ -116,10 +124,10 @@ impl App {
                     let session = SessionBuilder::new(browser, session_urls, hosts).build()?;
                     session.cookies().to_vec()
                 } else {
-                    App::get_cookies(self.args.cookie_db, self.args.bypass_lock, browser, hosts)?
+                    App::get_cookies(self.args.root_path, self.args.bypass_lock, browser, hosts)?
                 };
 
-                let mut stream = std::io::stdout().lock();
+                let mut stream = BufWriter::new(std::io::stdout().lock());
 
                 let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
                     crate::OutputFormat::Netscape => output::netscape,
@@ -160,7 +168,7 @@ impl App {
                     session.cookies().to_vec()
                 } else {
                     App::get_cookies(
-                        self.args.cookie_db,
+                        self.args.root_path,
                         self.args.bypass_lock,
                         browser,
                         Vec::new(),
