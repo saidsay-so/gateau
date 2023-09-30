@@ -32,7 +32,7 @@ pbkdf2 = { version = "0.11.0", features = ["sha1", "std"] }
 keyring = "1.2.0"
 
 [target.'cfg(windows)'.dependencies]
-aes-gcm = "0.10.1"
+aes-gcm = "0.10.3"
 base64ct = { version = "1.5.3", features = ["std"] }
 windows = { version = "0.43.0", features = [
     "Win32_Security_Cryptography",
