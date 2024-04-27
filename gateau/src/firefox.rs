@@ -60,8 +60,7 @@ pub fn get_cookies(conn: &Connection) -> Result<Vec<Cookie<'static>>> {
                         _ => SameSite::Strict,
                     })
                     .http_only(row.get::<_, isize>(7)? != 0)
-                    .finish()
-                    .into_owned(),
+                    .into(),
             )
         })?
         .filter_map(|c| c.ok())

@@ -1,5 +1,6 @@
 [workspace]
 members = ["gateau", "xtask"]
+resolver = "2"
 
 [profile.release-opt]
 inherits = "release"
