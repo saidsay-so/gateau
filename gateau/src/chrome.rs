@@ -325,8 +325,7 @@ pub(crate) fn get_cookies(
                         _ => SameSite::Strict,
                     })
                     .http_only(http_only)
-                    .finish()
-                    .into_owned())
+                    .into())
             },
         )
         .collect::<Result<Vec<_>, _>>()?;

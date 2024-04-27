@@ -30,7 +30,7 @@ const DERIVED_KEY_LENGTH: usize = 128;
 /// Derives a key from a password using the same parameters as Chrome for
 /// Linux platform.
 fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<Vec<u8>> {
-    let salt = SaltString::b64_encode(SYMMETRIC_SALT)?;
+    let salt = SaltString::encode_b64(SYMMETRIC_SALT)?;
 
     let key = Pbkdf2.hash_password_customized(
         password.as_ref(),

@@ -7,8 +7,8 @@
 use base64ct::{Base64, Encoding};
 use color_eyre::eyre::ensure;
 use windows::Win32::{
-    Security::Cryptography::{CryptUnprotectData, CRYPTOAPI_BLOB},
-    System::Memory::LocalFree,
+    Foundation::{LocalFree, HLOCAL},
+    Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB},
 };
 
 use crate::chrome::LocalState;
@@ -21,12 +21,12 @@ use crate::chrome::LocalState;
 /// which is normally guaranteed by the borrow checker.
 #[allow(unsafe_code)]
 pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Vec<u8>> {
-    let data_in = CRYPTOAPI_BLOB {
+    let data_in = CRYPT_INTEGER_BLOB {
         cbData: u32::try_from(encrypted_value.len())?,
         pbData: encrypted_value.as_mut_ptr(),
     };
 
-    let mut data_out = CRYPTOAPI_BLOB::default();
+    let mut data_out = CRYPT_INTEGER_BLOB::default();
 
     // SAFETY: `CryptUnprotectData` is a Windows API function whcih is safe to call with the correct parameters.
     // See https://docs.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata
@@ -35,12 +35,12 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> color_eyre::Result<Ve
     // We assume that `encrypted_value` is a valid buffer for the duration of the call.
     // We check that `data_out.pbData` is not null before creating a slice and that `CryptUnprotectData` returns a success code.
     unsafe {
-        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).ok()?;
+        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out)?;
 
         ensure!(!data_out.pbData.is_null(), "CryptUnprotectData failed");
 
         let data = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
-        LocalFree(data_out.pbData as _);
+        LocalFree(HLOCAL(data_out.pbData.cast()));
 
         Ok(data)
     }
