@@ -34,6 +34,12 @@ use rusqlite::Connection;
 pub(crate) mod paths;
 
 /// Get all cookies from the database.
+///
+/// ## Limitations
+///
+/// The expiry time is clamped to the maximum UNIX timestamp value supported by the underlying
+/// library (253402300799), despite the fact that Firefox uses a 64-bit integer to store the expiry
+/// time.
 pub fn get_cookies(conn: &Connection) -> Result<Vec<Cookie<'static>>> {
     let query = "SELECT name, value, host, path, 
                         expiry, isSecure, sameSite, 
@@ -50,8 +56,10 @@ pub fn get_cookies(conn: &Connection) -> Result<Vec<Cookie<'static>>> {
                     .domain(row.get::<_, String>(2)?)
                     .path(row.get::<_, String>(3)?)
                     .expires(Expiration::from(
-                        OffsetDateTime::from_unix_timestamp(row.get(4)?)
-                            .expect("Invalid timestamp"),
+                        OffsetDateTime::from_unix_timestamp(
+                            row.get::<_, i64>(4)?.min(253402300799),
+                        )
+                        .expect("Invalid timestamp"),
                     ))
                     .secure(row.get::<_, isize>(5)? != 0)
                     .same_site(match row.get(6)? {
