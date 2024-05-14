@@ -11,7 +11,7 @@ use pbkdf2::{
     Algorithm, Params, Pbkdf2,
 };
 
-use crate::browser::chrome::ChromeVariant;
+use super::super::ChromeVariant;
 
 /// Error returned when failing to decrypt a value.
 #[derive(Debug, thiserror::Error)]
@@ -64,7 +64,7 @@ pub(crate) fn get_v10_password(variant: ChromeVariant) -> Result<String> {
 /// Derives a key from a password using the same parameters as Chrome for
 /// macOS platform.
 fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> Result<Vec<u8>> {
-    let salt = SaltString::b64_encode(SYMMETRIC_SALT)?;
+    let salt = SaltString::encode_b64(SYMMETRIC_SALT)?;
 
     let key = Pbkdf2.hash_password_customized(
         password.as_ref(),
