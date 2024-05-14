@@ -136,8 +136,7 @@ impl FirefoxManager {
                             _ => SameSite::Strict,
                         })
                         .http_only(row.get::<_, isize>(7)? != 0)
-                        .finish()
-                        .into_owned(),
+                        .into(),
                 )
             })
             .map_err(|source| FirefoxManagerError::SqliteQuery { source })?
