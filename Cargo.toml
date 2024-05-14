@@ -1,5 +1,6 @@
 [workspace]
 members = ["gateau", "xtask"]
+default-members = ["gateau"]
 resolver = "2"
 
 [profile.release-opt]
