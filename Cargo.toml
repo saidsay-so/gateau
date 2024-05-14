@@ -1,5 +1,7 @@
 [workspace]
-members = ["packages/gateau", "packages/cli", "xtask"]
+members = ["packages/*"]
+default-members = ["packages/gateau"]
+resolver = "2"
 
 [profile.release-opt]
 inherits = "release"

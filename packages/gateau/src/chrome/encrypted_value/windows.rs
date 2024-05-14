@@ -6,12 +6,11 @@
 
 use base64ct::{Base64, Encoding};
 use windows::Win32::{
-    Foundation::HLOCAL,
+    Foundation::{LocalFree, HLOCAL},
     Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB},
-    System::Memory::LocalFree,
 };
 
-use crate::browser::chrome::LocalState;
+use super::super::LocalState;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DecryptDpapiValueError {
@@ -54,17 +53,16 @@ pub(crate) fn decrypt_dpapi(encrypted_value: &mut [u8]) -> Result<Vec<u8>, Decry
     // We assume that `encrypted_value` is a valid buffer for the duration of the call.
     // We check that `data_out.pbData` is not null before creating a slice and that `CryptUnprotectData` returns a success code.
     unsafe {
-        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out)
-            .ok()
-            .map_err(|source| DecryptDpapiValueError::UnknownError {
+        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).map_err(
+            |source| DecryptDpapiValueError::UnknownError {
                 source: source.into(),
-            })?;
+            },
+        )?;
 
         assert!(!data_out.pbData.is_null(), "CryptUnprotectData failed");
 
         let data = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
-        let ptr = HLOCAL(data_out.pbData as _);
-        let _ = LocalFree(ptr);
+        LocalFree(HLOCAL(data_out.pbData.cast()));
 
         Ok(data)
     }
@@ -97,7 +95,7 @@ pub enum DecryptDpapiKeyError {
     },
 
     #[error(
-        "Failed to decrypt key due to invalid prefix, found '{}' but expected {}",
+        "Failed to decrypt key due to invalid prefix, found '{}' but expected '{}'",
         String::from_utf8_lossy(key),
         String::from_utf8_lossy(DPAPI_PREFIX)
     )]

@@ -60,7 +60,7 @@ use self::encrypted_value::linux;
 use self::encrypted_value::mac;
 
 #[cfg(windows)]
-use {self::encrypted_value::windows, std::path::Path};
+use self::encrypted_value::windows;
 
 pub(crate) mod encrypted_value;
 mod paths;
@@ -314,8 +314,7 @@ impl ChromeManager {
                             _ => SameSite::Strict,
                         })
                         .http_only(http_only)
-                        .finish()
-                        .into_owned())
+                        .into())
                 },
             )
             .collect::<Result<Vec<_>, _>>()?;
@@ -413,6 +412,7 @@ impl ChromeManager {
     #[cfg(windows)]
     fn get_local_state(&self) -> Result<LocalState, DecryptChromeCookieError> {
         use std::{fs::File, io::BufReader};
+
         let path = self.path_provider.local_state();
 
         let file =

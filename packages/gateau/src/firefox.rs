@@ -101,6 +101,12 @@ impl FirefoxManager {
     }
 
     /// Get all cookies from the database.
+    ///
+    /// ## Limitations
+    ///
+    /// The expiry time is clamped to the maximum UNIX timestamp value supported by the underlying
+    /// library (253402300799), despite the fact that Firefox uses a 64-bit integer to store the expiry
+    /// time.
     pub fn get_cookies(&self) -> Result<Vec<Cookie<'static>>> {
         let query = "SELECT name, value, host, path, 
                         expiry, isSecure, sameSite, 

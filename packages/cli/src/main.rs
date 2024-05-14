@@ -60,6 +60,14 @@ impl FromStr for OutputFormat {
     }
 }
 
+fn not_help(s: OsString) -> Option<OsString> {
+    if s == "--help" {
+        None
+    } else {
+        Some(s)
+    }
+}
+
 #[derive(Debug, Clone, Bpaf)]
 enum Mode {
     /// Output cookies to stdout in the specified format
@@ -85,7 +93,7 @@ enum Mode {
         command: WrappedCmd,
 
         /// Arguments for the wrapped command
-        #[bpaf(any("ARGS"), many)]
+        #[bpaf(any("ARGS", not_help), many)]
         forwarded_args: Vec<OsString>,
     },
 }

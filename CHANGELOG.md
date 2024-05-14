@@ -15,6 +15,7 @@
 ### Build
 
 - Improve xtask ([5f4b5f](https://github.com/musikid/gateau/commit/5f4b5ff053f7f38a8361ca38abe5562f55f33d66))
+- Bump aes-gcm from 0.10.1 to 0.10.3 ([#6](https://github.com/musikid/gateau/issues/6)) ([665ba7](https://github.com/musikid/gateau/commit/665ba7dc3142e34309ca2069ec857d8b8b6aba06))
 
 ## [0.2.0](https://github.com/musikid/gateau/releases/tag/v0.2.0) - 2023-01-22
 
