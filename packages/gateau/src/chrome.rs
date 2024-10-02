@@ -36,16 +36,12 @@
 //!   ON cookies(host_key, top_frame_site_key, NAME, path);
 //! ```
 //!
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::unsync::OnceCell;
 
 use rusqlite::{functions::FunctionFlags, Connection};
-use serde::Deserialize;
 use thiserror::Error;
 
 use super::get_connection;
@@ -70,11 +66,11 @@ pub use paths::PathProvider;
 use super::HostFilterFn;
 
 /// Local state stored in `Local State` file.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 #[cfg(windows)]
 pub(crate) struct LocalState {
     #[serde(flatten)]
-    values: HashMap<String, serde_json::Value>,
+    values: std::collections::HashMap<String, serde_json::Value>,
 }
 
 struct ChromeCookie {

@@ -16,6 +16,7 @@ pub enum DecryptError {
     InvalidInputLength,
 
     #[error("Failed to decrypt value")]
+    #[cfg(windows)]
     InvalidInput,
 
     #[error("Failed to decrypt value due to invalid UTF-8")]
