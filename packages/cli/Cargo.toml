@@ -3,17 +3,17 @@ name = "cli"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-bpaf = { version = "0.7.7", features = ["derive", "bright-color"] }
-cookie = "0.17.0"
-color-eyre = "0.6.2"
+cookie.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
 gateau = { path = "../gateau" }
-http = "0.2.8"
-itertools = { version = "0.10.5", optional = true }
-serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.91"
+
+http = "^1.1.0"
+bpaf = { version = "^0.9.11", features = ["derive", "bright-color"] }
+color-eyre = "^0.6.2"
+itertools = { version = "^0.13.0", optional = true }
 tempfile = "3.3.0"
 
 [features]

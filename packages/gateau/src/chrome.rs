@@ -71,7 +71,7 @@ use super::HostFilterFn;
 
 /// Local state stored in `Local State` file.
 #[derive(Debug, Clone, Deserialize)]
-#[allow(dead_code)]
+#[cfg(windows)]
 pub(crate) struct LocalState {
     #[serde(flatten)]
     values: HashMap<String, serde_json::Value>,

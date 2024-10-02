@@ -130,8 +130,6 @@ pub(crate) fn decrypt_dpapi_encrypted_key<S: AsRef<str>>(
 
 #[cfg(test)]
 mod test {
-    use std::io::Cursor;
-
     use super::*;
 
     #[test]
