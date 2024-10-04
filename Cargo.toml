@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*"]
+members = ["packages/*", "xtask"]
 default-members = ["packages/gateau","packages/cli"]
 resolver = "2"
 
