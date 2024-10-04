@@ -123,6 +123,7 @@ fn dist_subcommand(
     files: Vec<PathBuf>,
 ) -> color_eyre::Result<()> {
     const BIN_NAME: &str = "gateau";
+    const TARGET_BIN_NAME: &str = "cli";
 
     let target = target.unwrap_or_else(|| {
         let sh = Shell::new().unwrap();
@@ -145,7 +146,7 @@ fn dist_subcommand(
     let sh = Shell::new()?;
 
     let mut c_build = cmd!(sh, "cargo build --verbose --locked --message-format=json")
-        .args(["--bin", BIN_NAME])
+        .args(["--bin", TARGET_BIN_NAME])
         .args(["--target", &target])
         .args(["--profile", &profile]);
 
@@ -162,7 +163,7 @@ fn dist_subcommand(
             match message? {
                 Message::CompilerArtifact(artifact) => {
                     if artifact.target.kind.iter().any(|k| k == "bin")
-                        && artifact.target.name == BIN_NAME
+                        && artifact.target.name == TARGET_BIN_NAME
                     {
                         break Ok(artifact.filenames.into_iter().next().unwrap());
                     }

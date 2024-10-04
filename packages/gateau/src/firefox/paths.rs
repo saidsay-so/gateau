@@ -3,7 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) struct PathProvider {
+use crate::CookiePathProvider;
+
+/// Path provider for Firefox.
+pub struct PathProvider {
     _base_dir: PathBuf,
     profile_dir: PathBuf,
 }
@@ -11,7 +14,7 @@ pub(crate) struct PathProvider {
 impl PathProvider {
     /// Create a new path provider for the given profile.
     /// If no profile is given, the root dir is used as the profile dir.
-    pub(crate) fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
+    pub fn new<R: AsRef<Path>, P: AsRef<OsStr>>(root_dir: R, profile: Option<P>) -> Self {
         let base_dir = root_dir.as_ref().to_owned();
 
         Self {
@@ -24,12 +27,16 @@ impl PathProvider {
         }
     }
 
+    pub fn from_root<R: AsRef<Path>>(root_dir: R) -> Self {
+        Self::new::<_, &OsStr>(root_dir, None)
+    }
+
     /// Returns a path provider for the default profile.
     ///
     /// # Panics
     ///
     /// This function panics if no default profile can be found.
-    pub(crate) fn default_profile() -> Self {
+    pub fn default_profile() -> Self {
         let root_dir = if cfg!(any(windows, target_os = "macos")) {
             dirs_next::config_dir()
         } else {
@@ -72,9 +79,10 @@ impl PathProvider {
                 .and_then(|section| section.get("Path"))
         }
     }
+}
 
-    /// Returns the path to the cookies database.
-    pub(crate) fn cookies_database(&self) -> PathBuf {
+impl CookiePathProvider for PathProvider {
+    fn cookies_database(&self) -> PathBuf {
         self.profile_dir.join("cookies.sqlite")
     }
 }

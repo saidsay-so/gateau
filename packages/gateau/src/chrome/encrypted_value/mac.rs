@@ -11,7 +11,25 @@ use pbkdf2::{
     Algorithm, Params, Pbkdf2,
 };
 
-use crate::chrome::ChromeVariant;
+use super::super::ChromeVariant;
+
+/// Error returned when failing to decrypt a value.
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Failed to get password from keychain: {source}")]
+    KeychainGetPassword {
+        #[from]
+        source: keyring::Error,
+    },
+
+    #[error("Failed to derive key from password: {source}")]
+    KeyDerivation {
+        #[from]
+        source: pbkdf2::password_hash::Error,
+    },
+}
+
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 /// Salt for symmetric key derivation.
 const SYMMETRIC_SALT: &[u8] = b"saltysalt";
@@ -25,7 +43,7 @@ const DERIVED_KEY_LENGTH: usize = 128;
 
 /// Gets the password used to encrypt cookies in Chrome on macOS using the
 /// the keychain API.
-pub(crate) fn get_v10_password(variant: ChromeVariant) -> color_eyre::Result<String> {
+pub(crate) fn get_v10_password(variant: ChromeVariant) -> Result<String> {
     let (service, account) = match variant {
         ChromeVariant::Chromium => ("Chromium Safe Storage", "Chromium"),
         ChromeVariant::Chrome => ("Chrome Safe Storage", "Chrome"),
@@ -45,8 +63,8 @@ pub(crate) fn get_v10_password(variant: ChromeVariant) -> color_eyre::Result<Str
 
 /// Derives a key from a password using the same parameters as Chrome for
 /// macOS platform.
-fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<Vec<u8>> {
-    let salt = SaltString::b64_encode(SYMMETRIC_SALT)?;
+fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> Result<Vec<u8>> {
+    let salt = SaltString::encode_b64(SYMMETRIC_SALT)?;
 
     let key = Pbkdf2.hash_password_customized(
         password.as_ref(),
@@ -63,7 +81,7 @@ fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<V
 }
 
 /// Gets the key used to encrypt cookies on macOS.
-pub(crate) fn get_v10_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
+pub(crate) fn get_v10_key(variant: ChromeVariant) -> Result<Vec<u8>> {
     let password = get_v10_password(variant)?;
     derive_key_from_password(password)
 }

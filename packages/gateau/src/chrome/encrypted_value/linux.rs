@@ -27,9 +27,19 @@ const HASH_ROUNDS: u32 = 1;
 /// Length of the derived key used by Chrome for AES-128.
 const DERIVED_KEY_LENGTH: usize = 128;
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Failed to get password from keyring")]
+    Keyring(#[from] keyring::Error),
+    #[error("Failed to hash password")]
+    Pbkdf2(#[from] pbkdf2::password_hash::Error),
+}
+
+type Result<T> = std::result::Result<T, Error>;
+
 /// Derives a key from a password using the same parameters as Chrome for
 /// Linux platform.
-fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<Vec<u8>> {
+fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> Result<Vec<u8>> {
     let salt = SaltString::encode_b64(SYMMETRIC_SALT)?;
 
     let key = Pbkdf2.hash_password_customized(
@@ -48,7 +58,7 @@ fn derive_key_from_password<P: AsRef<[u8]>>(password: P) -> color_eyre::Result<V
 
 /// Gets the password used to encrypt cookies in Chrome on Linux using the
 /// the secret service API.
-fn get_v11_password(variant: ChromeVariant) -> color_eyre::Result<String> {
+fn get_v11_password(variant: ChromeVariant) -> Result<String> {
     let variant = match variant {
         ChromeVariant::Chromium => "chromium",
         ChromeVariant::Chrome => "chrome",
@@ -66,7 +76,7 @@ fn get_v11_password(variant: ChromeVariant) -> color_eyre::Result<String> {
 
 /// Gets the key used to encrypt cookies in Chrome on Linux by deriving it from
 /// the password retrieved with the secret service API.
-pub(crate) fn get_v11_key(variant: ChromeVariant) -> color_eyre::Result<Vec<u8>> {
+pub(crate) fn get_v11_key(variant: ChromeVariant) -> Result<Vec<u8>> {
     let password = get_v11_password(variant)?;
     derive_key_from_password(password)
 }

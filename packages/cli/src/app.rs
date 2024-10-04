@@ -1,9 +1,8 @@
 use std::{
     ffi::OsStr,
-    io::{self, Write},
+    io::{self, BufWriter, Write},
     path::PathBuf,
     process::Command,
-    str::FromStr,
     sync::Arc,
 };
 
@@ -12,52 +11,20 @@ use color_eyre::{
     Result,
 };
 use cookie::Cookie;
+use gateau::{
+    chrome,
+    firefox::{self, FirefoxManager},
+    Browser,
+};
 use http::Uri;
 
-use crate::{url::BaseDomain, utils::sqlite_predicate_builder, Args};
-
-use crate::{
-    chrome::{self, ChromeVariant},
-    firefox,
-};
+use crate::url::BaseDomain;
 
 use self::session::SessionBuilder;
+use super::Args;
 
 mod output;
 mod session;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Browser {
-    Firefox,
-    ChromeVariant(ChromeVariant),
-}
-
-impl std::fmt::Display for Browser {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Browser::Firefox => write!(f, "Firefox"),
-            Browser::ChromeVariant(ChromeVariant::Chromium) => write!(f, "Chromium"),
-            Browser::ChromeVariant(ChromeVariant::Chrome) => write!(f, "Google Chrome"),
-            Browser::ChromeVariant(ChromeVariant::Edge) => write!(f, "Microsoft Edge"),
-        }
-    }
-}
-
-impl FromStr for Browser {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "firefox" => Ok(Browser::Firefox),
-            "chromium" => Ok(Browser::ChromeVariant(ChromeVariant::Chromium)),
-            "chrome" => Ok(Browser::ChromeVariant(ChromeVariant::Chrome)),
-            "edge" => Ok(Browser::ChromeVariant(ChromeVariant::Edge)),
-            _ => Err(format!(
-                "'{s}' is not one of the supported browsers (firefox, chromium, chrome, edge)"
-            )),
-        }
-    }
-}
 
 pub struct App {
     args: Args,
@@ -70,7 +37,7 @@ impl App {
 
     /// Get the cookies matching the provided hosts from the specified browser.
     fn get_cookies(
-        cookie_db_path: Option<PathBuf>,
+        root_dir: Option<PathBuf>,
         bypass_lock: bool,
         browser: Browser,
         hosts: Vec<Uri>,
@@ -79,33 +46,44 @@ impl App {
 
         match browser {
             Browser::Firefox => {
-                let path_provider = firefox::paths::PathProvider::default_profile();
+                let path_provider = if let Some(root_dir) = root_dir {
+                    firefox::PathProvider::from_root(root_dir)
+                } else {
+                    firefox::PathProvider::default_profile()
+                };
 
-                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
-
-                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
-
+                let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |cookie_host| {
-                    filter_hosts(cookie_host, &hosts)
-                })?;
+                let filter = Box::from(move |host: &str| {
+                    let hosts = Arc::clone(&hosts);
+                    filter_hosts(host, &hosts)
+                });
 
-                firefox::get_cookies(&conn)
+                let manager = FirefoxManager::new(path_provider, Some(filter), bypass_lock)?;
+                manager
+                    .get_cookies()
+                    .wrap_err("Failed to get cookies from Firefox")
             }
 
             Browser::ChromeVariant(chrome_variant) => {
-                let path_provider = chrome::paths::PathProvider::default_profile(chrome_variant);
+                let path_provider = if let Some(root_dir) = root_dir {
+                    chrome::PathProvider::from_root(root_dir)
+                } else {
+                    chrome::PathProvider::default_profile(chrome_variant)
+                };
 
-                let db_path = cookie_db_path.unwrap_or_else(|| path_provider.cookies_database());
+                let hosts = Arc::from(hosts);
+                let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
+                let chrome_manager = chrome::ChromeManager::new(
+                    chrome_variant,
+                    path_provider,
+                    Some(filter),
+                    bypass_lock,
+                )?;
 
-                let conn = crate::utils::get_connection(db_path, bypass_lock)?;
-
-                let hosts = Arc::clone(&hosts);
-                sqlite_predicate_builder(&conn, "host_filter", move |host| {
-                    filter_hosts(host, &hosts)
-                })?;
-
-                chrome::get_cookies(&conn, chrome_variant, path_provider)
+                chrome_manager
+                    .get_cookies()
+                    .wrap_err("Failed to get cookies from Chrome")
             }
         }
     }
@@ -154,10 +132,10 @@ impl App {
                     let session = SessionBuilder::new(browser, session_urls, hosts).build()?;
                     session.cookies().to_vec()
                 } else {
-                    App::get_cookies(self.args.cookie_db, self.args.bypass_lock, browser, hosts)?
+                    App::get_cookies(self.args.root_path, self.args.bypass_lock, browser, hosts)?
                 };
 
-                let mut stream = std::io::stdout().lock();
+                let mut stream = BufWriter::new(std::io::stdout().lock());
 
                 let formatter = match format.unwrap_or(crate::OutputFormat::Netscape) {
                     crate::OutputFormat::Netscape => output::netscape,
@@ -198,7 +176,7 @@ impl App {
                     session.cookies().to_vec()
                 } else {
                     App::get_cookies(
-                        self.args.cookie_db,
+                        self.args.root_path,
                         self.args.bypass_lock,
                         browser,
                         Vec::new(),

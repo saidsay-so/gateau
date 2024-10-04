@@ -2,16 +2,15 @@
 
 use std::{ffi::OsString, path::PathBuf, process::ExitCode, str::FromStr};
 
-use app::{App, Browser};
+use app::App;
 use bpaf::Bpaf;
 use color_eyre::Result;
 use http::Uri;
 
 mod app;
-mod chrome;
-mod firefox;
 mod url;
-mod utils;
+
+use gateau::Browser;
 
 #[derive(Debug, Clone)]
 enum WrappedCmd {
@@ -103,11 +102,11 @@ enum Mode {
 #[bpaf(options, version)]
 /// A simple wrapper to import cookies from browsers for curl, wget and httpie.
 struct Args {
-    /// Ccookie database path
+    /// Browser root path
     #[bpaf(short, long)]
-    cookie_db: Option<PathBuf>,
+    root_path: Option<PathBuf>,
 
-    /// Open the browser in a new context and output the saved cookies when it closes
+    /// Open the browser in a new context and use the saved cookies when it closes
     #[bpaf(long)]
     session: bool,
 
