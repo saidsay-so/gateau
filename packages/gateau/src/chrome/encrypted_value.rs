@@ -5,7 +5,7 @@
 pub(crate) mod linux;
 #[cfg(target_os = "macos")]
 pub(crate) mod mac;
-#[cfg(all(unix, not(target_os = "macos")))]
+// Unix does not need to be gated as it does not use any platform-specific code.
 pub(crate) mod posix;
 #[cfg(windows)]
 pub(crate) mod windows;

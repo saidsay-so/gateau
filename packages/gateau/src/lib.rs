@@ -2,6 +2,7 @@
 //!
 //! It supports Firefox and Chromium-based browsers.
 
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::{ffi::OsString, path::Path};
 
@@ -55,6 +56,12 @@ impl FromStr for Browser {
             )),
         }
     }
+}
+
+#[doc(hidden)]
+pub trait CookiePathProvider {
+    /// Returns the path to the cookies database.
+    fn cookies_database(&self) -> PathBuf;
 }
 
 /// Get a connection to the database, while bypassing the file locking if `bypass_lock` is `true`.

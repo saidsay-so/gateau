@@ -1,3 +1,5 @@
+use crate::CookiePathProvider;
+
 use super::ChromeVariant;
 
 use std::{
@@ -74,9 +76,10 @@ impl PathProvider {
     pub(crate) fn local_state(&self) -> PathBuf {
         self._base_dir.join("Local State")
     }
+}
 
-    /// Returns the path to the cookies database.
-    pub fn cookies_database(&self) -> PathBuf {
+impl CookiePathProvider for PathProvider {
+    fn cookies_database(&self) -> PathBuf {
         // The cookies database is stored in a subfolder called "Network" in newer versions of
         // Chromium (on Windows it seems). If this folder does not exist, we fall back to the old location.
         let new_path = self.profile_dir.join("Network").join("Cookies");

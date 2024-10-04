@@ -31,6 +31,8 @@ use cookie::{Cookie, CookieBuilder, Expiration, SameSite};
 use rusqlite::functions::FunctionFlags;
 use rusqlite::Connection;
 
+use crate::CookiePathProvider;
+
 use super::get_connection;
 
 use super::HostFilterFn;
@@ -53,15 +55,15 @@ pub enum FirefoxManagerError {
 }
 
 /// Firefox cookie database manager.
-pub struct FirefoxManager {
-    path_provider: paths::PathProvider,
+pub struct FirefoxManager<P: CookiePathProvider> {
+    path_provider: P,
     conn: Connection,
 }
 
-impl FirefoxManager {
+impl<P: CookiePathProvider> FirefoxManager<P> {
     /// Create a new Firefox manager.
     pub fn new(
-        path_provider: paths::PathProvider,
+        path_provider: P,
         mut filter: Option<Box<HostFilterFn>>,
         bypass_lock: bool,
     ) -> Result<Self> {
@@ -82,14 +84,8 @@ impl FirefoxManager {
     }
 
     /// Get the path provider.
-    pub fn path_provider(&self) -> &paths::PathProvider {
+    pub fn path_provider(&self) -> &P {
         &self.path_provider
-    }
-
-    /// Create a new Firefox manager with the default profile.
-    pub fn default_profile(filter: Option<Box<HostFilterFn>>, bypass_lock: bool) -> Result<Self> {
-        let path_provider = paths::PathProvider::default_profile();
-        Self::new(path_provider, filter, bypass_lock)
     }
 
     /// Get all cookies from the database.
@@ -136,5 +132,13 @@ impl FirefoxManager {
             .collect::<Vec<_>>();
 
         Ok(cookies)
+    }
+}
+
+impl FirefoxManager<PathProvider> {
+    /// Create a new Firefox manager with the default profile.
+    pub fn default_profile(filter: Option<Box<HostFilterFn>>, bypass_lock: bool) -> Result<Self> {
+        let path_provider = PathProvider::default_profile();
+        Self::new(path_provider, filter, bypass_lock)
     }
 }

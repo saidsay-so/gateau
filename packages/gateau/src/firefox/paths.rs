@@ -3,6 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::CookiePathProvider;
+
 /// Path provider for Firefox.
 pub struct PathProvider {
     _base_dir: PathBuf,
@@ -77,9 +79,10 @@ impl PathProvider {
                 .and_then(|section| section.get("Path"))
         }
     }
+}
 
-    /// Returns the path to the cookies database.
-    pub fn cookies_database(&self) -> PathBuf {
+impl CookiePathProvider for PathProvider {
+    fn cookies_database(&self) -> PathBuf {
         self.profile_dir.join("cookies.sqlite")
     }
 }

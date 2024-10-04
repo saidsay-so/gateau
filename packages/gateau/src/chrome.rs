@@ -43,6 +43,8 @@ use once_cell::unsync::OnceCell;
 use rusqlite::{functions::FunctionFlags, Connection};
 use thiserror::Error;
 
+use crate::CookiePathProvider;
+
 use super::get_connection;
 
 #[cfg(all(unix, not(target_os = "macos")))]
@@ -166,19 +168,19 @@ pub enum ChromeManagerError {
 }
 
 /// Chrome cookies manager.
-pub struct ChromeManager {
+pub struct ChromeManager<P: CookiePathProvider> {
     conn: Connection,
     #[allow(unused)]
     variant: ChromeVariant,
-    path_provider: PathProvider,
+    path_provider: P,
     key_cache: OnceCell<Vec<u8>>,
 }
 
-impl ChromeManager {
+impl<P: CookiePathProvider> ChromeManager<P> {
     /// Create a new instance of `ChromeManager`.
     pub fn new(
         variant: ChromeVariant,
-        path_provider: PathProvider,
+        path_provider: P,
         mut filter: Option<Box<HostFilterFn>>,
         bypass_lock: bool,
     ) -> Result<Self, ChromeManagerError> {
@@ -208,7 +210,9 @@ impl ChromeManager {
             key_cache: OnceCell::new(),
         })
     }
+    }
 
+impl ChromeManager<PathProvider> {
     /// Get the path provider.
     pub fn path_provider(&self) -> &PathProvider {
         &self.path_provider
