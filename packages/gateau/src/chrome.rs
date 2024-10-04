@@ -210,7 +210,7 @@ impl<P: CookiePathProvider> ChromeManager<P> {
             key_cache: OnceCell::new(),
         })
     }
-    }
+}
 
 impl ChromeManager<PathProvider> {
     /// Get the path provider.
@@ -306,6 +306,17 @@ impl ChromeManager<PathProvider> {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(cookies)
+    }
+
+    /// Placeholder for the decryption function, which is platform-dependent.
+    /// This function assumes that the value is not encrypted.
+    #[cfg(not(any(unix, windows)))]
+    fn decrypt_cookie_value<V: AsRef<[u8]>>(
+        &self,
+        encrypted_value: V,
+    ) -> Result<String, DecryptChromeCookieError> {
+        // We assume that it's not encrypted
+        String::from_utf8(encrypted_value.as_ref().into()).map_err(From::from)
     }
 
     /// Decrypt a cookie value.
