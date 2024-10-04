@@ -6,6 +6,8 @@
 ### Bug Fixes
 
 - Improve error message when decrypting value from Chrome on Unix ([ae1a72](https://github.com/musikid/gateau/commit/ae1a72156f7567d57f2a9d26bbf9072658480e20))
+- Update deps ([#8](https://github.com/musikid/gateau/issues/8)) ([7c8870](https://github.com/musikid/gateau/commit/7c8870a9d44bb3d90a2bd917c54d6640d0d70c6e))
+- Clamp cookie ([#9](https://github.com/musikid/gateau/issues/9)) ([6e1115](https://github.com/musikid/gateau/commit/6e1115a0d3bafb0dee03e69451036e73798d9605))
 
 ### Miscellaneous Tasks
 
