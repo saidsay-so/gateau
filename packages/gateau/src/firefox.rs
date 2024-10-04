@@ -25,8 +25,6 @@
 //! );
 //! ```
 
-use std::sync::{Arc, Mutex};
-
 use cookie::time::OffsetDateTime;
 use cookie::{Cookie, CookieBuilder, Expiration, SameSite};
 
@@ -58,26 +56,21 @@ pub enum FirefoxManagerError {
 pub struct FirefoxManager {
     path_provider: paths::PathProvider,
     conn: Connection,
-    filter: Arc<Mutex<Box<HostFilterFn>>>,
 }
 
 impl FirefoxManager {
     /// Create a new Firefox manager.
     pub fn new(
         path_provider: paths::PathProvider,
-        filter: Box<HostFilterFn>,
+        mut filter: Option<Box<HostFilterFn>>,
         bypass_lock: bool,
     ) -> Result<Self> {
         let conn = get_connection(path_provider.cookies_database(), bypass_lock)
             .map_err(|source| FirefoxManagerError::SqliteOpen { source })?;
-        let filter = Arc::from(Mutex::from(filter));
-
-        {
-            let filter = filter.clone();
+        if let Some(mut filter) = filter.take() {
             conn.create_scalar_function("host_filter", 1, FunctionFlags::default(), move |ctx| {
-                let mut f = filter.lock().expect("Failed to lock filter");
                 let host = ctx.get::<String>(0)?;
-                Ok(f(&host) as i64)
+                Ok(filter(&host) as i64)
             })
             .map_err(|source| FirefoxManagerError::SqliteFunctionCreate { source })?;
         }
@@ -85,7 +78,6 @@ impl FirefoxManager {
         Ok(Self {
             path_provider,
             conn,
-            filter,
         })
     }
 
@@ -95,7 +87,7 @@ impl FirefoxManager {
     }
 
     /// Create a new Firefox manager with the default profile.
-    pub fn default_profile(filter: Box<HostFilterFn>, bypass_lock: bool) -> Result<Self> {
+    pub fn default_profile(filter: Option<Box<HostFilterFn>>, bypass_lock: bool) -> Result<Self> {
         let path_provider = paths::PathProvider::default_profile();
         Self::new(path_provider, filter, bypass_lock)
     }

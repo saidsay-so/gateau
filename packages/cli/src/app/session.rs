@@ -67,7 +67,7 @@ impl<'a> SessionBuilder {
                 let hosts = Arc::clone(&hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
 
-                let manager = FirefoxManager::new(path_provider, filter, false)?;
+                let manager = FirefoxManager::new(path_provider, Some(filter), false)?;
                 let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })
@@ -107,7 +107,8 @@ impl<'a> SessionBuilder {
                 let hosts = Arc::from(hosts);
                 let hosts = Arc::clone(&hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
-                let manager = ChromeManager::new(chrome_variant, path_provider, filter, false)?;
+                let manager =
+                    ChromeManager::new(chrome_variant, path_provider, Some(filter), false)?;
                 let cookies = manager.get_cookies()?;
 
                 Ok(Session { cookies })

@@ -59,7 +59,7 @@ impl App {
                     filter_hosts(host, &hosts)
                 });
 
-                let manager = FirefoxManager::new(path_provider, filter, bypass_lock)?;
+                let manager = FirefoxManager::new(path_provider, Some(filter), bypass_lock)?;
                 manager
                     .get_cookies()
                     .wrap_err("Failed to get cookies from Firefox")
@@ -74,8 +74,12 @@ impl App {
 
                 let hosts = Arc::from(hosts);
                 let filter = Box::from(move |host: &str| filter_hosts(host, &hosts));
-                let chrome_manager =
-                    chrome::ChromeManager::new(chrome_variant, path_provider, filter, bypass_lock)?;
+                let chrome_manager = chrome::ChromeManager::new(
+                    chrome_variant,
+                    path_provider,
+                    Some(filter),
+                    bypass_lock,
+                )?;
 
                 chrome_manager
                     .get_cookies()

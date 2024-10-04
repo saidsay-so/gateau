@@ -36,7 +36,6 @@
 //!   ON cookies(host_key, top_frame_site_key, NAME, path);
 //! ```
 //!
-use std::sync::{Arc, Mutex};
 
 use cookie::{time::OffsetDateTime, Cookie, CookieBuilder, Expiration, SameSite};
 use once_cell::unsync::OnceCell;
@@ -169,10 +168,10 @@ pub enum ChromeManagerError {
 /// Chrome cookies manager.
 pub struct ChromeManager {
     conn: Connection,
+    #[allow(unused)]
     variant: ChromeVariant,
     path_provider: PathProvider,
     key_cache: OnceCell<Vec<u8>>,
-    filter: Arc<Mutex<Box<HostFilterFn>>>,
 }
 
 impl ChromeManager {
@@ -180,7 +179,7 @@ impl ChromeManager {
     pub fn new(
         variant: ChromeVariant,
         path_provider: PathProvider,
-        filter: Box<HostFilterFn>,
+        mut filter: Option<Box<HostFilterFn>>,
         bypass_lock: bool,
     ) -> Result<Self, ChromeManagerError> {
         let conn =
@@ -194,14 +193,10 @@ impl ChromeManager {
                 }
             })?;
 
-        let filter: Arc<Mutex<Box<HostFilterFn>>> = Arc::new(Mutex::new(filter));
-
-        {
-            let filter = filter.clone();
+        if let Some(mut filter) = filter.take() {
             conn.create_scalar_function("host_filter", 1, FunctionFlags::default(), move |ctx| {
                 let host = &ctx.get::<String>(0)?;
-                let mut f = filter.lock().expect("Failed to read regex filter value");
-                Ok(f(&host))
+                Ok(filter(&host))
             })
             .map_err(|source| ChromeManagerError::SqliteFunctionCreate { source })?;
         }
@@ -210,7 +205,6 @@ impl ChromeManager {
             conn,
             variant,
             path_provider,
-            filter,
             key_cache: OnceCell::new(),
         })
     }
@@ -223,20 +217,12 @@ impl ChromeManager {
     /// Create a new instance of `ChromeManager` with the default profile.
     pub fn default_profile(
         variant: ChromeVariant,
-        filter: Box<HostFilterFn>,
+        filter: Option<Box<HostFilterFn>>,
         bypass_lock: bool,
     ) -> Result<Self, ChromeManagerError> {
         let path_provider = PathProvider::default_profile(variant);
 
         Self::new(variant, path_provider, filter, bypass_lock)
-    }
-
-    pub fn set_filter(&self, filter: Box<HostFilterFn>) {
-        let mut f = self
-            .filter
-            .lock()
-            .expect("Failed to read regex filter value");
-        *f = filter;
     }
 
     /// Get cookies from the database.
@@ -380,7 +366,7 @@ impl ChromeManager {
                 self.key_cache
                     .get_or_try_init(|| mac::get_v10_key(self.variant))
                     .map_err(|source| DecryptChromeCookieError::GetKey {
-                        key_variant: "v11",
+                        key_variant: "v10",
                         source: source.into(),
                     })?,
             ),
