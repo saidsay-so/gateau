@@ -9,6 +9,10 @@
 - Update deps ([#8](https://github.com/musikid/gateau/issues/8)) ([7c8870](https://github.com/musikid/gateau/commit/7c8870a9d44bb3d90a2bd917c54d6640d0d70c6e))
 - Clamp cookie ([#9](https://github.com/musikid/gateau/issues/9)) ([6e1115](https://github.com/musikid/gateau/commit/6e1115a0d3bafb0dee03e69451036e73798d9605))
 
+### Documentation
+
+- Add documentation website ([#11](https://github.com/musikid/gateau/issues/11)) ([62d49d](https://github.com/musikid/gateau/commit/62d49d39467be5ddc3d14cb77266d6eb208bb7fa))
+
 ### Miscellaneous Tasks
 
 - Reverse parser order ([519d01](https://github.com/musikid/gateau/commit/519d01d9ae7c0429b63c89468b5506c9bef7d19d))
