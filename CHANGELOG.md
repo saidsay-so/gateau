@@ -13,6 +13,7 @@
 
 - Add documentation website ([#11](https://github.com/musikid/gateau/issues/11)) ([62d49d](https://github.com/musikid/gateau/commit/62d49d39467be5ddc3d14cb77266d6eb208bb7fa))
 - Fix link ([#12](https://github.com/musikid/gateau/issues/12)) ([3d5a8b](https://github.com/musikid/gateau/commit/3d5a8b96e241f14046880d3d67a53b1fc5faba55))
+- Add missing prop ([#13](https://github.com/musikid/gateau/issues/13)) ([8ce9af](https://github.com/musikid/gateau/commit/8ce9af13cbb9c618f72bae18deefbb7b95b3b28d))
 
 ### Miscellaneous Tasks
 
