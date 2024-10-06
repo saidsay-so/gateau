@@ -1,0 +1,47 @@
+---
+title: Welcome to gateau's documentation
+description: Learn how to use gateau to export your cookies to various formats.
+template: splash
+hero:
+  tagline: Piping your cookies will be a piece of cake!
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get started
+      link: /first-steps/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Live demo
+      link: /live-demo/
+      icon: right-caret
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/saidsay-so/gateau
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Next steps
+
+<CardGrid stagger>
+  <Card title="Supports all major platforms" icon="linux">
+    gateau supports Linux, macOS, and Windows.
+  </Card>
+  <Card title="Integrated with browsers" icon="seti:firefox">
+    Export cookies from Chromium/Chrome and Firefox.
+  </Card>
+  <Card title="Powered by Rust" icon="seti:rust">
+    Rust provides blazing fast performance and memory safety.
+  </Card>
+  <Card title="Open source" icon="seti:github">
+    gateau is open source and available on GitHub.
+  </Card>
+  <Card title="WASM support" icon="seti:wasm">
+    Use gateau in the browser with WebAssembly.
+  </Card>
+  <Card title="Read the docs" icon="open-book">
+    Learn more in [the documentation](/first-steps/getting-started/).
+  </Card>
+</CardGrid>
