@@ -4,7 +4,7 @@ import starlight from "@astrojs/starlight";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://saidsay-so.github.io/gateau",
+  site: "https://saidsay-so.github.io",
   integrations: [
     starlight({
       title: "gateau",
