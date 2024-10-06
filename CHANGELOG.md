@@ -12,6 +12,7 @@
 ### Documentation
 
 - Add documentation website ([#11](https://github.com/musikid/gateau/issues/11)) ([62d49d](https://github.com/musikid/gateau/commit/62d49d39467be5ddc3d14cb77266d6eb208bb7fa))
+- Fix link ([#12](https://github.com/musikid/gateau/issues/12)) ([3d5a8b](https://github.com/musikid/gateau/commit/3d5a8b96e241f14046880d3d67a53b1fc5faba55))
 
 ### Miscellaneous Tasks
 
