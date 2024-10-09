@@ -20,6 +20,7 @@
 
 - Reverse parser order ([519d01](https://github.com/musikid/gateau/commit/519d01d9ae7c0429b63c89468b5506c9bef7d19d))
 - Update deps ([58b7a4](https://github.com/musikid/gateau/commit/58b7a4484ff679b4892eb44cceb09b91960520b9))
+- Create FUNDING.yml ([#14](https://github.com/musikid/gateau/issues/14)) ([44b3ad](https://github.com/musikid/gateau/commit/44b3ad82acde0830f8eb57336626dcd9c41646bf))
 
 ### Build
 
