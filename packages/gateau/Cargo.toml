@@ -9,9 +9,7 @@ serde = { workspace = true, features = ["derive"] }
 
 cfg-if = "^1.0.0"
 once_cell = "^1.17.0"
-rusqlite = { git = "https://github.com/rusqlite/rusqlite.git", features = [
-    "functions",
-] }
+rusqlite = { version = "^0.32.1", features = ["functions"] }
 tini = "^1.3.0"
 dirs-next = "^2.0.0"
 regex = "1.8.1"
