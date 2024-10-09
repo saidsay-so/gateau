@@ -234,21 +234,22 @@ as the cookies would be imported for the first request only.
 
 A simple wrapper to import cookies from browsers for curl, wget and httpie.
 
-Usage: [-c ARG] [--session] --session-urls ARG... [-b ARG] [--bypass-lock] COMMAND ...
+Usage: gateau [-r=ARG] [--session] [--session-urls=ARG]... [-b=ARG] [--bypass-lock] COMMAND ...
 
 Available options:
-    -c, --cookie-db <ARG>     Ccookie database path
-        --session             Open the browser in a new context and output the saved cookies when it closes
-        --session-urls <ARG>  URLs to open in the session
-    -b, --browser <ARG>       Browser(s) to import cookies from
-                              Supported browsers: chrome, chromium, firefox, edge
-        --bypass-lock         Bypass the lock on the database (can cause read errors)
-    -h, --help                Prints help information
-    -V, --version             Prints version information
+    -r, --root-path=ARG     Browser root path
+        --session           Open the browser in a new context and use the saved cookies when it
+                            closes
+        --session-urls=ARG  URLs to open in the session
+    -b, --browser=ARG       Browser(s) to import cookies from
+        --bypass-lock       Bypass the lock on the database (can cause read errors)
+    -h, --help              Prints help information
+    -V, --version           Prints version information
 
 Available commands:
-    output  Output cookies to stdout in the specified format
-    wrap    Wrap a command with the imported cookies
+    output                  Output cookies to stdout in the specified format
+    wrap                    Wrap a command with the imported cookies
+
 
 > gateau output --help
 
