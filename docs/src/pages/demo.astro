@@ -1,0 +1,94 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro"
+---
+
+<StarlightPage frontmatter={{ title: "Demo", template: "splash" }}>
+    <section>
+    <p>This live demo page allows you to output a cookie database file into either netscape or httpie format.
+    Simply paste the cookie database file into the text area below and select the format you want to output.</p>
+    </section>
+    <article>
+        <p>The cookie database file location depends on your browser, the most common locations being:</p>
+        <ul>
+            <li>Chrome: <code>~/.config/google-chrome/Default/Cookies</code></li>
+            <li>Firefox: <code>~/.mozilla/firefox/xxxxxxxx.default/cookies.sqlite</code></li>
+            <li>Edge: <code>~/.config/microsoft-edge-dev/Default/Cookies</code></li>
+        </ul>
+
+
+        <div class="file-input">
+        <label for="file">Select the database file</label>
+        <input type="file" id="file" name="file" />
+        </div>
+
+        <div class="format-input">
+        <label for="format">Select the output format</label>
+        <select id="format" name="format">
+            <option value="netscape">Netscape</option>
+            <option value="httpie">HTTPie</option>
+        </select>
+        </div>
+
+        <div class="browser-input">
+        <label for="browser">Select the browser</label>
+        <select id="browser" name="browser">
+            <option value="firefox">Firefox</option>
+        </select>
+
+        <div class="output">
+        <label for="output">Output</label>
+        <textarea disabled id="output" name="output" cols="50" rows="25" />
+        </div>
+    </article>
+</StarlightPage>
+
+<script>
+import gateauWasmUrl from "../../../target/wasm32-wasi/release/cli.wasm?url";
+import {runWasix, Directory, init} from "@wasmer/sdk";
+import wasmerSDKModule from "@wasmer/sdk/wasm?url";
+
+let module: WebAssembly.Module;
+async function initialize() {
+    await init({module: wasmerSDKModule});
+    module = await WebAssembly.compileStreaming(await fetch(gateauWasmUrl));
+}
+
+async function convertCookieDb() {
+    const fileElem = document.getElementById("file") as HTMLInputElement;
+    const file = fileElem.files![0];
+    const db = await file.arrayBuffer();
+
+    const browserElem = document.getElementById("browser") as HTMLSelectElement;
+    const browser = browserElem.value;
+
+    const formatElem = document.getElementById("format") as HTMLSelectElement;
+    const format = formatElem.value;
+
+    let fs;
+    switch (browser) {
+        case "firefox":
+            fs = {"cookies.sqlite": new Uint8Array(db)};
+            break;
+        default:
+    }
+    const dir = new Directory(fs);
+
+    const instance = await runWasix(module, {
+      args: ["output", "-b", browser, "--format", format, "--root-dir", "/app"],
+      mount: { "/app": dir },
+    });
+
+    const result = await instance.wait();
+    console.log(result);
+    return result.ok ? result.stdout : "Error: " + result.stderr;
+}
+
+await initialize();
+
+const fileElem = document.getElementById("file") as HTMLInputElement;
+fileElem.addEventListener("change", async () => {
+    const outputElem = document.getElementById("output") as HTMLTextAreaElement;
+    outputElem.value = "Converting...";
+    outputElem.value = await convertCookieDb();
+});
+</script>

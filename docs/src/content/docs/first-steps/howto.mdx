@@ -1,0 +1,110 @@
+---
+title: Usage
+description: Learn how to use gateau to export your cookies to various formats.
+---
+
+### Output (Piping) Cookies
+
+#### cookies.txt Format (curl, wget)
+
+You can output cookies in Netscape "cookies.txt" format and pipe them to curl or wget.
+
+**Using curl:**
+
+```bash
+curl -b <(gateau output --format netscape) https://example.com
+```
+
+In this example, gateau will output cookies from Firefox in Netscape format, and curl will import those which match the requested domains and use them for the request.
+
+**Using wget:**
+
+```bash
+wget --load-cookies <(gateau output --browser=chrome --format netscape) https://example.com
+```
+
+In this example, gateau will output cookies from Chrome in Netscape format, and wget will import those which match the requested domains and use them for the request.
+
+#### httpie Sessions
+
+Output cookies in httpie session format (experimental).
+
+**Using httpie:**
+
+```bash
+http --session-read-only <(gateau output --format httpie-session example.com) example.com
+```
+
+In this example, gateau will output cookies from Firefox in httpie session format, and httpie will import it as an anonymous session.
+
+**Saving Named Sessions:**
+
+```bash
+HOST=adventofcode.com
+SESSION_NAME=aoc
+CONFIG_PATH=${XDG_CONFIG_HOME:-$HOME/.config}
+gateau output --format=httpie-session $HOST > $CONFIG_PATH/httpie/sessions/$HOST/$SESSION_NAME.json
+https --session=$SESSION_NAME $HOST
+```
+
+### Browser Session
+
+Create a browser session within a new context and export the cookies after the session termination.
+
+**Example:**
+
+```bash
+gateau wrap --browser=chromium --session -- curl https://example.com
+```
+
+### Wrapping Commands
+
+Wrap commands (curl, wget, httpie) to import cookies directly.
+
+**Example with curl:**
+
+```bash
+gateau wrap curl https://example.com
+```
+
+This will wrap the command `curl https://example.com` and import cookies for the request.
+
+**Example with httpie:**
+
+```bash
+gateau wrap --browser=chromium http GET https://example.com
+```
+
+This will wrap the command `http GET https://example.com` and import cookies for the request.
+
+### Piping vs Wrapping
+
+#### Piping with Process Substitution
+
+Piping is flexible and secure but requires a shell that supports process substitution.
+
+**Example:**
+
+```bash
+curl -b <(gateau output --format netscape) https://example.com
+```
+
+#### Wrapping
+
+Wrapping avoids the need for process substitution and temporary files but is limited to supported commands.
+
+**Example:**
+
+```bash
+gateau wrap curl https://example.com
+```
+
+### Bypass Database File Locking
+
+Use the `--bypass-lock` flag to bypass database file locking (not recommended).
+
+**Example:**
+
+```bash
+gateau wrap --bypass-lock curl https://example.com
+```

@@ -8,22 +8,20 @@ hero:
     file: ../../assets/logo.svg
   actions:
     - text: Get started
-      link: /first-steps/getting-started/
+      link: first-steps/getting-started/
       icon: right-arrow
       variant: primary
-    - text: Live demo
-      link: /live-demo/
-      icon: right-caret
-      variant: secondary
+    #    - text: Live demo
+    #      link: demo/
+    #      icon: right-caret
+    #      variant: secondary
     - text: View on GitHub
       link: https://github.com/saidsay-so/gateau
-      icon: external
+      icon: github
       variant: minimal
 ---
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
-
-## Next steps
 
 <CardGrid stagger>
   <Card title="Supports all major platforms" icon="linux">
@@ -37,9 +35,6 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
   </Card>
   <Card title="Open source" icon="seti:github">
     gateau is open source and available on GitHub.
-  </Card>
-  <Card title="WASM support" icon="seti:wasm">
-    Use gateau in the browser with WebAssembly.
   </Card>
   <Card title="Read the docs" icon="open-book">
     Learn more in [the documentation](/first-steps/getting-started/).
