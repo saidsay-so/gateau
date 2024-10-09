@@ -47,7 +47,7 @@ gateau can be used to output cookies in different formats, notably `netscape`
 format which is used by curl and wget to import cookies from a file,
 and httpie sessions.
 It can also be used to wrap commands (curl, wget, httpie) and import cookies directly without
-having to use shell's [process substitution](https://en.wikipedia.org/wiki/Process_substitution) 
+having to use shell's [process substitution](https://en.wikipedia.org/wiki/Process_substitution)
 or manually create temporary files.
 It imports cookies from Firefox by default if the `--browser` flag is not specified.
 
@@ -184,7 +184,7 @@ It allows you to use gateau with any command, as long as the used shell supports
 [process substitution](https://en.wikipedia.org/wiki/Process_substitution).
 It is the most secure, as it does not use a temporary file
 to pass the cookies to the command.
-However, it is not always 
+However, it is not always
 [possible](https://serverfault.com/questions/688645/powershells-equivalent-to-bashs-process-substitution)
 to use process substitution,
 as it is not supported by all shells (cmd.exe or Powershell for example).
@@ -197,13 +197,15 @@ as long as the command is supported by gateau.
 
 ### Bypass database file locking
 
+Be aware that this flag is not recommended, as it could cause read errors
+if the database is being modified at the same time, especially with Chrome.
+The best solution is to wait for the browser to finish its operations and close it.
+
 When Firefox is running, or when Chrome saves its cookies,
 they lock their database files, so gateau cannot access
 them. To bypass this, you can use the `--bypass-lock` flag.
-Be aware that this flag is not recommended, as it could cause read errors
-if the database is being modified at the same time, especially with Chrome.
-Although, the database files are opened in read-only mode, so your cookies will not be
-altered if an error occurs.
+Although, the database files are opened in read-only mode,
+so your cookies should not be altered if an error occurs.
 
 ### Aliases
 
@@ -280,7 +282,7 @@ Available options:
 ## Performance
 
 gateau is written in Rust, so it should be pretty fast, even if it is not
-really optimized yet. Here are some non-scientific benchmarks:
+really optimized yet. Here are some non-rigorous benchmarks:
 
 ```
 Benchmark 1: gateau wrap --bypass-lock curl localhost:8000

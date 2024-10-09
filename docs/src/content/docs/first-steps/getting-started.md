@@ -1,7 +1,5 @@
 ---
-title:  Getting Started with gateau 🍰
-
-description: Learn how to use gateau to export your cookies to various formats.
+title: Getting Started
 ---
 
 Welcome to gateau! This guide will help you get started

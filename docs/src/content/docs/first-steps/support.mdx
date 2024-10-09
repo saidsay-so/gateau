@@ -1,0 +1,32 @@
+---
+title: Compatibility
+description: Learn how to use gateau to export your cookies to various formats.
+---
+
+## Browser compatibility
+
+gateau supports exporting cookies from the following browsers:
+
+- Firefox
+- Chromium/Chrome
+- Microsoft Edge
+
+## Output formats
+
+Multiple formats are supported for exporting cookies. The following formats are available:
+
+#### Netscape "cookies.txt" format
+
+You can output cookies in Netscape "cookies.txt" format, which is compatible with many tools, including `curl` and `wget`.
+
+```bash
+curl -b <(gateau output --format netscape) https://example.com
+```
+
+#### HTTPie session format (experimental)
+
+You can output cookies in the format used by HTTPie sessions.
+
+```bash
+http --session-read-only <(gateau output --format httpie-session example.com) example.com
+```
