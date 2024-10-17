@@ -1,0 +1,10 @@
+[data-has-hero] .page {
+  background: radial-gradient(#f1ba7720, transparent 45%) no-repeat 0vw -30vh / 105vw
+    200vh;
+}
+
+[data-has-hero] header {
+  border-bottom: 1px solid transparent;
+  background-color: transparent;
+  backdrop-filter: blur(16px);
+}

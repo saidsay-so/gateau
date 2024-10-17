@@ -15,7 +15,8 @@ You can output cookies in Netscape "cookies.txt" format and pipe them to curl or
 curl -b <(gateau output --format netscape) https://example.com
 ```
 
-In this example, gateau will output cookies from Firefox in Netscape format, and curl will import those which match the requested domains and use them for the request.
+In this example, gateau will output cookies from Firefox in Netscape format,
+and curl will import those which match the requested domains and use them for the request.
 
 **Using wget:**
 
@@ -23,7 +24,8 @@ In this example, gateau will output cookies from Firefox in Netscape format, and
 wget --load-cookies <(gateau output --browser=chrome --format netscape) https://example.com
 ```
 
-In this example, gateau will output cookies from Chrome in Netscape format, and wget will import those which match the requested domains and use them for the request.
+In this example, gateau will output cookies from Chrome in Netscape format,
+and wget will import those which match the requested domains and use them for the request.
 
 #### httpie Sessions
 
@@ -35,9 +37,10 @@ Output cookies in httpie session format (experimental).
 http --session-read-only <(gateau output --format httpie-session example.com) example.com
 ```
 
-In this example, gateau will output cookies from Firefox in httpie session format, and httpie will import it as an anonymous session.
+In this example, gateau will output cookies from Firefox in httpie session format, 
+and httpie will import it as an anonymous session.
 
-**Saving Named Sessions:**
+**Saving named sessions:**
 
 ```bash
 HOST=adventofcode.com

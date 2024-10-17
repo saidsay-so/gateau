@@ -22,21 +22,23 @@ hero:
 ---
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
+import "../../styles/landing.css";
 
 <CardGrid stagger>
-  <Card title="Supports all major platforms" icon="linux">
+  <Card title="Cross-platform" icon="linux">
     gateau supports Linux, macOS, and Windows.
   </Card>
-  <Card title="Integrated with browsers" icon="seti:firefox">
+  <Card title="Browser support" icon="seti:firefox">
     Export cookies from Chromium/Chrome and Firefox.
   </Card>
   <Card title="Powered by Rust" icon="seti:rust">
     Rust provides blazing fast performance and memory safety.
   </Card>
   <Card title="Open source" icon="seti:github">
-    gateau is open source and available on GitHub.
+    gateau is open source, licensed under the GPL-3.0 license 
+    and available on [GitHub](https://github.com/saidsay-so/gateau).
   </Card>
   <Card title="Read the docs" icon="open-book">
-    Learn more in [the documentation](/first-steps/getting-started/).
+    Learn more in [the documentation](first-steps/getting-started/).
   </Card>
 </CardGrid>
