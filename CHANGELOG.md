@@ -3,6 +3,12 @@
 
 ## [unreleased]
 
+### Documentation
+
+- Improve landing page ([#17](https://github.com/musikid/gateau/issues/17)) ([b37920](https://github.com/musikid/gateau/commit/b3792016411a0b8f2d40043843ab748976abe749))
+
+## [0.3.0](https://github.com/musikid/gateau/releases/tag/v0.3.0) - 2024-10-09
+
 ### Bug Fixes
 
 - Improve error message when decrypting value from Chrome on Unix ([ae1a72](https://github.com/musikid/gateau/commit/ae1a72156f7567d57f2a9d26bbf9072658480e20))
