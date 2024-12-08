@@ -2,21 +2,26 @@
 
 # gateau 🍰
 
-![Launch example](assets/example.svg)
+![Demo](assets/demo.gif)
 
-🍪 Piping your **cookies** will be a piece of **cake** 🍰!
+<p>
+  <a href="https://github.com/saidsay-so/gateau/releases/latest">
+    <img src="https://img.shields.io/github/v/release/saidsay-so/gateau" alt="Latest release">
+  </a>
+  <a href="https://github.com/saidsay-so/gateau/actions">
+    <img src="https://github.com/saidsay-so/gateau/actions/workflows/test.yml/badge.svg" alt="GitHub Workflow Status">
+  </a>
+  <a href="https://github.com/saidsay-so/gateau/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/saidsay-so/gateau" alt="License">
+  </a>
+</p>
+
+Piping your **cookies** will be a piece of **cake** 🍰!
 
 gateau is a command line tool to use your cookies from browsers (Chromium/Chrome and Firefox)
 in your **curl**, **wget** and **httpie\*** requests or export them to a file.
 
 </div>
-
-<sub>
-
-\* httpie support is experimental, as httpie sessions are neither documented nor stable.
-See [httpie sessions](#httpie-sessions) for more information.
-
-</sub>
 
 ## Installation
 
