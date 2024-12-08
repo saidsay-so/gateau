@@ -6,6 +6,7 @@
 ### Documentation
 
 - Improve landing page ([#17](https://github.com/musikid/gateau/issues/17)) ([b37920](https://github.com/musikid/gateau/commit/b3792016411a0b8f2d40043843ab748976abe749))
+- Improve demo and badges ([#18](https://github.com/musikid/gateau/issues/18)) ([f14d2f](https://github.com/musikid/gateau/commit/f14d2f2d6c93a19a5387a66ab45a5a89ca59e498))
 
 ## [0.3.0](https://github.com/musikid/gateau/releases/tag/v0.3.0) - 2024-10-09
 
