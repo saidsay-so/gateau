@@ -47,9 +47,11 @@ export default defineConfig({
       logo: {
         src: "./src/assets/logo.svg",
       },
-      social: {
-        github: "https://github.com/saidsay-so/gateau",
-      },
+      social: [{
+        icon: 'github',
+        label: 'GitHub',
+        href: "https://github.com/saidsay-so/gateau",
+      }],
       editLink: {
         baseUrl: "https://github.com/saidsay-so/gateau/edit/main/docs",
       },
