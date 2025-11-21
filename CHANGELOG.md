@@ -3,10 +3,18 @@
 
 ## [unreleased]
 
+### Bug Fixes
+
+- Update all deps ([#19](https://github.com/musikid/gateau/issues/19)) ([b683d6](https://github.com/musikid/gateau/commit/b683d614cf4c6be35451afc68db77b822349cd66))
+
 ### Documentation
 
 - Improve landing page ([#17](https://github.com/musikid/gateau/issues/17)) ([b37920](https://github.com/musikid/gateau/commit/b3792016411a0b8f2d40043843ab748976abe749))
 - Improve demo and badges ([#18](https://github.com/musikid/gateau/issues/18)) ([f14d2f](https://github.com/musikid/gateau/commit/f14d2f2d6c93a19a5387a66ab45a5a89ca59e498))
+
+### Build
+
+- Update deps ([#20](https://github.com/musikid/gateau/issues/20)) ([ce001b](https://github.com/musikid/gateau/commit/ce001b637f7ec79a9913e16d4f24a78b30b6ae07))
 
 ## [0.3.0](https://github.com/musikid/gateau/releases/tag/v0.3.0) - 2024-10-09
 
