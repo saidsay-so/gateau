@@ -3,6 +3,12 @@
 
 ## [unreleased]
 
+### Build
+
+- Bump astro from 5.16.0 to 5.18.1 in /docs ([#23](https://github.com/musikid/gateau/issues/23)) ([74cc84](https://github.com/musikid/gateau/commit/74cc84d0e62cec4186af29df85b8f7c807ca0855))
+
+## [0.3.1](https://github.com/musikid/gateau/releases/tag/v0.3.1) - 2025-11-21
+
 ### Bug Fixes
 
 - Update all deps ([#19](https://github.com/musikid/gateau/issues/19)) ([b683d6](https://github.com/musikid/gateau/commit/b683d614cf4c6be35451afc68db77b822349cd66))
